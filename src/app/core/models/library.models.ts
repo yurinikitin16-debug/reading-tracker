@@ -63,6 +63,8 @@ export interface CalendarDay {
   date: string;
   completedChapters: number;
   plannedChapters: number;
+  scheduled?: ReadingPlanItem[];
+  completed?: ReadingPlanItem[];
 }
 
 export interface DashboardSummary {

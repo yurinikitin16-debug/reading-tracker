@@ -3,34 +3,130 @@
     <p class="eyebrow">Schedule</p>
     <h1>Calendar</h1>
   </div>
-  <strong>{{ currentMonth | date: 'MMMM y' }}</strong>
+  <div class="month-actions">
+    <button class="ghost icon-button" type="button" (click)="previousMonth()" aria-label="Previous month">‹</button>
+    <strong>{{ monthLabel() | date: 'MMMM y' }}</strong>
+    <button class="ghost icon-button" type="button" (click)="nextMonth()" aria-label="Next month">›</button>
+    <button class="ghost today-button" type="button" (click)="goToToday()">Today</button>
+  </div>
 </section>
 
-<section class="card calendar">
-  <div class="weekdays">
-    @for (weekday of weekdays; track weekday) {
-      <span>{{ weekday }}</span>
-    }
-  </div>
+@if (errorMessage()) {
+  <p class="error-message">{{ errorMessage() }}</p>
+}
 
-  <div class="month-grid">
-    @for (cell of cells$ | async; track cell.isoDate) {
-      <div class="day" [class.dim]="!cell.inMonth" [class.has-work]="cell.completedChapters || cell.plannedChapters">
-        <span>{{ cell.date | date: 'd' }}</span>
-        <div class="dots">
-          @if (cell.completedChapters) {
-            <i class="completed"></i>
-          }
-          @if (cell.plannedChapters) {
-            <i class="planned"></i>
-          }
-        </div>
+<section class="calendar-layout">
+  <article class="card calendar">
+    <div class="weekdays">
+      @for (weekday of weekdays; track weekday) {
+        <span>{{ weekday }}</span>
+      }
+    </div>
+
+    <div class="month-grid" [class.loading]="isLoading()">
+      @for (cell of cells(); track cell.isoDate) {
+        <button
+          class="day"
+          type="button"
+          [class.dim]="!cell.inMonth"
+          [class.today]="cell.isToday"
+          [class.selected]="cell.isSelected"
+          [class.has-work]="cell.completedChapters || cell.plannedChapters"
+          [class.has-missed]="cell.missedChapters"
+          (click)="selectDay(cell)"
+        >
+          <span class="day-number">{{ cell.date | date: 'd' }}</span>
+          <span class="day-counts">
+            @if (cell.completedChapters) {
+              <span class="count completed">{{ cell.completedChapters }}</span>
+            }
+            @if (cell.openPlannedChapters) {
+              <span class="count planned">{{ cell.openPlannedChapters }}</span>
+            }
+            @if (cell.missedChapters) {
+              <span class="count missed">{{ cell.missedChapters }}</span>
+            }
+          </span>
+          <span class="dots">
+            @if (cell.completedChapters) {
+              <i class="completed"></i>
+            }
+            @if (cell.openPlannedChapters) {
+              <i class="planned"></i>
+            }
+            @if (cell.missedChapters) {
+              <i class="missed"></i>
+            }
+          </span>
+        </button>
+      }
+    </div>
+
+    <div class="legend">
+      <span><i class="completed"></i> Completed</span>
+      <span><i class="planned"></i> Planned</span>
+      <span><i class="missed"></i> Missed</span>
+    </div>
+  </article>
+
+  <aside class="card day-panel">
+    <div class="day-panel-header">
+      <div>
+        <p class="eyebrow">Selected Day</p>
+        <h2>{{ selectedDate() | date: 'MMM d, y' }}</h2>
       </div>
-    }
-  </div>
+      <div class="day-summary">
+        <strong>{{ selectedCompleted().length }}</strong>
+        <span>read</span>
+      </div>
+    </div>
 
-  <div class="legend">
-    <span><i class="completed"></i> Completed</span>
-    <span><i class="planned"></i> Planned</span>
-  </div>
+    <section class="detail-section">
+      <div class="detail-heading">
+        <h3>Planned</h3>
+        <span>{{ selectedScheduled().length }}</span>
+      </div>
+
+      <div class="detail-list">
+        @for (item of selectedScheduled(); track item.chapterId) {
+          <article class="detail-item" [class.done]="item.doneDate">
+            <div>
+              <strong>{{ getItemChapter(item) }}</strong>
+              <small>{{ getItemBook(item) }}</small>
+              @if (getItemSeries(item)) {
+                <small>{{ getItemSeries(item) }}</small>
+              }
+            </div>
+            <span>{{ item.doneDate ? 'Read' : 'Planned' }}</span>
+          </article>
+        } @empty {
+          <p class="empty">Nothing planned.</p>
+        }
+      </div>
+    </section>
+
+    <section class="detail-section">
+      <div class="detail-heading">
+        <h3>Completed</h3>
+        <span>{{ selectedCompleted().length }}</span>
+      </div>
+
+      <div class="detail-list">
+        @for (item of selectedCompleted(); track item.chapterId) {
+          <article class="detail-item completed-item">
+            <div>
+              <strong>{{ getItemChapter(item) }}</strong>
+              <small>{{ getItemBook(item) }}</small>
+              @if (item.scheduledDate) {
+                <small>Planned {{ item.scheduledDate | date: 'MMM d' }}</small>
+              }
+            </div>
+            <span>Read</span>
+          </article>
+        } @empty {
+          <p class="empty">No completed chapters.</p>
+        }
+      </div>
+    </section>
+  </aside>
 </section>

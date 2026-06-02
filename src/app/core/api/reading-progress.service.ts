@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import { map } from 'rxjs';
 
 import { API_BASE_URL } from './api.config';
 import { CalendarDay, ReadingPlanItem } from '../models/library.models';
@@ -35,7 +36,15 @@ export class ReadingProgressService {
   }
 
   getCalendarData() {
-    return this.http.get<CalendarDay[]>(`${this.apiBaseUrl}/reading-progress/calendar`);
+    return this.http.get<CalendarDay[]>(`${this.apiBaseUrl}/reading-progress/calendar`).pipe(
+      map((days) => days.map((day) => ({
+        ...day,
+        completedChapters: day.completedChapters ?? day.completed?.length ?? 0,
+        plannedChapters: day.plannedChapters ?? day.scheduled?.length ?? 0,
+        scheduled: day.scheduled ?? [],
+        completed: day.completed ?? []
+      })))
+    );
   }
 
   scheduleChapter(chapterId: number, scheduledDate: string) {

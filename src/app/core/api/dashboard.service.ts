@@ -10,6 +10,6 @@ export class DashboardService {
   private readonly apiBaseUrl = inject(API_BASE_URL);
 
   getSummary() {
-    return this.http.get<DashboardSummary>(`${this.apiBaseUrl}/dashboard`);
+    return this.http.get<DashboardSummary>(`${this.apiBaseUrl}/dashboard/summary`);
   }
 }

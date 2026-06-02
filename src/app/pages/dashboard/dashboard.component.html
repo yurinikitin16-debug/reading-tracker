@@ -8,7 +8,7 @@
 
   <section class="metric-grid">
     <article class="card hero-progress">
-      <span>Overall Progress</span>
+      <div class="metric-label">Overall Progress</div>
       <strong>{{ summary.overallProgressPercentage }}%</strong>
       <div class="progress">
         <span [style.width.%]="summary.overallProgressPercentage"></span>
@@ -17,43 +17,52 @@
     </article>
 
     <article class="card metric">
-      <span>Current Streak</span>
+      <div class="metric-label">Current Streak</div>
       <strong>{{ summary.currentStreak }}</strong>
       <small>days</small>
     </article>
 
     <article class="card metric">
-      <span>Completed Books</span>
+      <div class="metric-label">Completed Books</div>
       <strong>{{ summary.completedBooksCount }}</strong>
       <small>books finished</small>
     </article>
   </section>
 
   <section class="content-grid">
-    <article class="card">
+    <article class="card continue-card">
       <div class="card-title">
         <h2>Continue Reading</h2>
       </div>
       @if (summary.currentReadingChapter; as current) {
         <div class="chapter-card">
-          <p>{{ current.bookTitle || current.book }}</p>
-          <strong>{{ current.chapterTitle || current.chapter }}</strong>
-          <small>{{ current.seriesName || current.series }}</small>
+          <div class="book-cover">
+            @if (getCoverUrl(current); as coverUrl) {
+              <img [src]="coverUrl" [alt]="current.bookTitle || current.book || 'Book cover'">
+            } @else {
+              <span></span>
+            }
+          </div>
+          <div class="chapter-copy">
+            <p>{{ current.bookTitle || current.book }}</p>
+            <strong>{{ current.chapterTitle || current.chapter }}</strong>
+            <small>{{ current.seriesName || current.series }}</small>
+          </div>
         </div>
       } @else {
         <p class="empty">No current chapter yet.</p>
       }
     </article>
 
-    <article class="card">
+    <article class="card today-card">
       <div class="card-title">
         <h2>Today's Chapter</h2>
       </div>
       @if (summary.todayPlannedChapter; as planned) {
-        <div class="chapter-card">
+        <div class="today-chapter">
           <p>{{ planned.bookTitle || planned.book }}</p>
           <strong>{{ planned.chapterTitle || planned.chapter }}</strong>
-          <small>{{ planned.scheduledDate }}</small>
+          <small>{{ planned.scheduledDate | date:'MMM d, y' }}</small>
         </div>
       } @else {
         <p class="empty">Nothing planned for today.</p>
@@ -61,19 +70,24 @@
     </article>
   </section>
 
-  <section class="card">
+  <section class="card series-progress-card">
     <div class="card-title">
       <h2>Progress by Series</h2>
     </div>
     <div class="series-list">
-      @for (series of summary.progressBySeries; track series.id) {
+      @for (series of summary.progressBySeries; track getSeriesTrackId(series)) {
         <div class="series-row">
-          <span>{{ series.name }}</span>
+          <div>
+            <strong>{{ getSeriesName(series) }}</strong>
+            <small>{{ series.completedChapters }} / {{ series.totalChapters }} chapters</small>
+          </div>
           <div class="progress">
             <span [style.width.%]="series.progressPercentage"></span>
           </div>
           <strong>{{ series.progressPercentage }}%</strong>
         </div>
+      } @empty {
+        <p class="empty">No series progress yet.</p>
       }
     </div>
   </section>

@@ -1,3 +1,25 @@
+.month-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.month-actions strong {
+  min-width: 132px;
+  text-align: center;
+}
+
+.today-button {
+  min-width: 72px;
+}
+
+.calendar-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.7fr);
+  gap: 16px;
+  align-items: start;
+}
+
 .calendar {
   display: grid;
   gap: 18px;
@@ -12,25 +34,85 @@
 
 .weekdays {
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
+  font-weight: 700;
   text-align: center;
 }
 
 .day {
+  position: relative;
   display: grid;
-  min-height: 86px;
+  align-content: space-between;
+  min-height: 104px;
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--surface-strong);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  text-align: left;
+}
+
+.day:hover {
+  border-color: rgba(139, 92, 246, 0.55);
+  transform: translateY(-1px);
 }
 
 .day.dim {
-  opacity: 0.4;
+  opacity: 0.44;
+}
+
+.day.today {
+  border-color: rgba(139, 92, 246, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(139, 92, 246, 0.38);
+}
+
+.day.selected {
+  background: rgba(139, 92, 246, 0.16);
+  border-color: var(--accent);
 }
 
 .day.has-work {
-  border-color: rgba(139, 92, 246, 0.45);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.day.has-missed:not(.selected) {
+  border-color: rgba(251, 113, 133, 0.36);
+}
+
+.day-number {
+  font-weight: 800;
+}
+
+.day-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.count {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 22px;
+  text-align: center;
+}
+
+.count.completed {
+  background: rgba(74, 222, 128, 0.16);
+  color: #86efac;
+}
+
+.count.planned {
+  background: rgba(139, 92, 246, 0.18);
+  color: #c4b5fd;
+}
+
+.count.missed {
+  background: rgba(251, 113, 133, 0.16);
+  color: #fecdd3;
 }
 
 .dots,
@@ -41,7 +123,7 @@
 }
 
 .dots {
-  align-self: end;
+  min-height: 8px;
 }
 
 i {
@@ -59,18 +141,170 @@ i {
   background: var(--accent);
 }
 
+.missed {
+  background: var(--danger);
+}
+
 .legend {
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.day-panel {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 20px;
+}
+
+.day-panel-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.day-panel-header h2,
+.detail-heading h3 {
+  margin: 0;
+}
+
+.day-summary {
+  display: grid;
+  min-width: 74px;
+  justify-items: end;
   color: var(--muted);
 }
 
+.day-summary strong {
+  color: var(--text);
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.detail-section {
+  display: grid;
+  gap: 12px;
+}
+
+.detail-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.detail-heading span {
+  color: var(--accent-soft);
+  font-weight: 800;
+}
+
+.detail-list {
+  display: grid;
+  gap: 10px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.detail-item.done,
+.detail-item.completed-item {
+  border-color: rgba(74, 222, 128, 0.28);
+  background: rgba(74, 222, 128, 0.08);
+}
+
+.detail-item div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.detail-item strong,
+.detail-item small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-item small {
+  color: var(--muted);
+}
+
+.detail-item > span {
+  min-width: max-content;
+  color: var(--accent-soft);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.error-message {
+  margin: 0 0 16px;
+  color: #fecdd3;
+}
+
+.month-grid.loading {
+  opacity: 0.58;
+  pointer-events: none;
+}
+
+@media (max-width: 1040px) {
+  .calendar-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .day-panel {
+    position: static;
+  }
+}
+
 @media (max-width: 720px) {
+  .month-actions {
+    width: 100%;
+  }
+
+  .month-actions strong {
+    flex: 1;
+  }
+
   .weekdays,
   .month-grid {
     gap: 4px;
   }
 
   .day {
-    min-height: 56px;
-    padding: 8px;
+    min-height: 68px;
+    padding: 7px;
+  }
+
+  .day-counts {
+    display: none;
+  }
+
+  .legend {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 460px) {
+  .today-button {
+    display: none;
+  }
+
+  .day {
+    min-height: 54px;
+  }
+
+  .day-panel-header,
+  .detail-item {
+    align-items: flex-start;
   }
 }
