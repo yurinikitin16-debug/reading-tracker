@@ -1,0 +1,36 @@
+<section class="page-header">
+  <div>
+    <p class="eyebrow">Schedule</p>
+    <h1>Calendar</h1>
+  </div>
+  <strong>{{ currentMonth | date: 'MMMM y' }}</strong>
+</section>
+
+<section class="card calendar">
+  <div class="weekdays">
+    @for (weekday of weekdays; track weekday) {
+      <span>{{ weekday }}</span>
+    }
+  </div>
+
+  <div class="month-grid">
+    @for (cell of cells$ | async; track cell.isoDate) {
+      <div class="day" [class.dim]="!cell.inMonth" [class.has-work]="cell.completedChapters || cell.plannedChapters">
+        <span>{{ cell.date | date: 'd' }}</span>
+        <div class="dots">
+          @if (cell.completedChapters) {
+            <i class="completed"></i>
+          }
+          @if (cell.plannedChapters) {
+            <i class="planned"></i>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <div class="legend">
+    <span><i class="completed"></i> Completed</span>
+    <span><i class="planned"></i> Planned</span>
+  </div>
+</section>

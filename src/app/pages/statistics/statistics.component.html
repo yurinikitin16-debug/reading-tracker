@@ -1,0 +1,190 @@
+<section class="page-header">
+  <div>
+    <p class="eyebrow">Insights</p>
+    <h1>Statistics</h1>
+  </div>
+</section>
+
+@if (isLoading()) {
+  <section class="empty-state">
+    <h2>Loading statistics...</h2>
+  </section>
+} @else {
+  @if (summary(); as summary) {
+    @if (errorMessage()) {
+      <p class="notice">{{ errorMessage() }}</p>
+    }
+
+    <nav class="tabs" aria-label="Statistics views">
+      @for (tab of tabs; track tab.id) {
+        <button type="button" [class.active]="activeTab() === tab.id" (click)="setTab(tab.id)">
+          {{ tab.label }}
+        </button>
+      }
+    </nav>
+
+    <section class="stat-grid">
+      <article class="card stat">
+        <span>Chapters Read</span>
+        <strong>{{ summary.completedChapters }}</strong>
+      </article>
+      <article class="card stat">
+        <span>Completed Books</span>
+        <strong>{{ summary.completedBooksCount }}</strong>
+      </article>
+      <article class="card stat">
+        <span>Current Streak</span>
+        <strong>{{ summary.currentStreak }}</strong>
+      </article>
+      <article class="card stat">
+        <span>Longest Streak</span>
+        <strong>{{ summary.longestStreak }}</strong>
+      </article>
+    </section>
+
+    @switch (activeTab()) {
+      @case ('overview') {
+        <section class="stats-layout">
+          <article class="card chart-card">
+            <div class="card-title">
+              <h2>Chapters Read</h2>
+              <label class="range-select">
+                <span class="sr-only">Chart range</span>
+                <select [ngModel]="chartRange()" (ngModelChange)="setChartRange($event)">
+                  @for (option of chartRangeOptions; track option.value) {
+                    <option [value]="option.value">{{ option.label }}</option>
+                  }
+                </select>
+              </label>
+            </div>
+            <div class="bar-chart" [style.--bar-count]="selectedRangeDays().length">
+              @for (day of selectedRangeDays(); track day.date) {
+                <button
+                  class="bar-column"
+                  type="button"
+                  [class.selected]="selectedChartDay()?.date === day.date"
+                  [attr.aria-label]="day.date + ': ' + day.completedChapters + ' chapters'"
+                  (click)="selectChartDay(day)"
+                >
+                  <span [style.height]="barHeight(day.completedChapters, maxSelectedRange())"></span>
+                </button>
+              }
+            </div>
+            @if (selectedChartDay(); as day) {
+              <p class="chart-selection">
+                <time>{{ day.date | date: 'MMM d, y' }}</time>:
+                <strong>{{ day.completedChapters }}</strong>
+                chapters
+              </p>
+            }
+          </article>
+
+          <article class="card chart-card">
+            <div class="card-title">
+              <h2>Progress by Series</h2>
+              <span>{{ summary.progressBySeries.length }} series</span>
+            </div>
+            <div class="series-list">
+              @for (series of summary.progressBySeries; track series.seriesId) {
+                <div class="series-row">
+                  <span>{{ series.seriesName }}</span>
+                  <div class="progress">
+                    <span [style.width.%]="series.progressPercentage"></span>
+                  </div>
+                  <strong>{{ series.completedChapters }} / {{ series.totalChapters }}</strong>
+                </div>
+              }
+            </div>
+          </article>
+        </section>
+      }
+
+      @case ('series') {
+        <section class="card">
+          <div class="card-title">
+            <h2>By Series</h2>
+            <span>Completed chapters by series</span>
+          </div>
+          <div class="series-list expanded">
+            @for (series of summary.progressBySeries; track series.seriesId) {
+              <div class="series-row">
+                <span>{{ series.seriesName }}</span>
+                <div class="progress">
+                  <span [style.width.%]="series.progressPercentage"></span>
+                </div>
+                <strong>{{ series.progressPercentage }}%</strong>
+                <small>{{ series.completedChapters }} / {{ series.totalChapters }} chapters</small>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      @case ('month') {
+        <section class="card chart-card wide">
+          <div class="card-title">
+            <h2>By Month</h2>
+            <span>Completed chapters</span>
+          </div>
+          <div class="month-list">
+            @for (month of monthStats(); track month.month) {
+              <div class="month-row">
+                <span>{{ month.label }}</span>
+                <div class="progress">
+                  <span [style.width]="progressWidth(month.completedChapters, maxMonth())"></span>
+                </div>
+                <strong>{{ month.completedChapters }}</strong>
+              </div>
+            } @empty {
+              <p class="muted">No completed chapters yet.</p>
+            }
+          </div>
+        </section>
+      }
+
+      @case ('day') {
+        <section class="card chart-card wide">
+          <div class="card-title">
+            <h2>By Day</h2>
+            <span>Completed chapters by date</span>
+          </div>
+          <div class="day-list">
+            @for (day of dayStats(); track day.date) {
+              <div class="day-row">
+                <time>{{ day.date | date: 'MMM d, y' }}</time>
+                <div class="progress">
+                  <span [style.width]="progressWidth(day.completedChapters, maxDay())"></span>
+                </div>
+                <strong>{{ day.completedChapters }}</strong>
+              </div>
+            } @empty {
+              <p class="muted">No completed chapters yet.</p>
+            }
+          </div>
+        </section>
+      }
+    }
+
+    <section class="card average-card">
+      <div class="card-title">
+        <h2>Average per day</h2>
+        <span>Last 30 days</span>
+      </div>
+      <div class="average-grid">
+        <div>
+          <strong>{{ averageChaptersPerDay().toFixed(1) }}</strong>
+          <span>Chapters</span>
+        </div>
+        <div>
+          <strong>{{ readingDaysLast30() }}</strong>
+          <span>Reading days</span>
+        </div>
+      </div>
+    </section>
+  } @else {
+    <section class="empty-state">
+      <h2>No statistics yet</h2>
+      <p>Statistics are calculated from reading progress.</p>
+    </section>
+  }
+}

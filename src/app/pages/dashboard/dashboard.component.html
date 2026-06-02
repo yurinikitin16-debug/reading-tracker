@@ -1,0 +1,85 @@
+@if (summary$ | async; as summary) {
+  <section class="page-header">
+    <div>
+      <p class="eyebrow">Dashboard</p>
+      <h1>Good evening</h1>
+    </div>
+  </section>
+
+  <section class="metric-grid">
+    <article class="card hero-progress">
+      <span>Overall Progress</span>
+      <strong>{{ summary.overallProgressPercentage }}%</strong>
+      <div class="progress">
+        <span [style.width.%]="summary.overallProgressPercentage"></span>
+      </div>
+      <small>{{ summary.completedChapters }} / {{ summary.totalChapters }} chapters</small>
+    </article>
+
+    <article class="card metric">
+      <span>Current Streak</span>
+      <strong>{{ summary.currentStreak }}</strong>
+      <small>days</small>
+    </article>
+
+    <article class="card metric">
+      <span>Completed Books</span>
+      <strong>{{ summary.completedBooksCount }}</strong>
+      <small>books finished</small>
+    </article>
+  </section>
+
+  <section class="content-grid">
+    <article class="card">
+      <div class="card-title">
+        <h2>Continue Reading</h2>
+      </div>
+      @if (summary.currentReadingChapter; as current) {
+        <div class="chapter-card">
+          <p>{{ current.bookTitle || current.book }}</p>
+          <strong>{{ current.chapterTitle || current.chapter }}</strong>
+          <small>{{ current.seriesName || current.series }}</small>
+        </div>
+      } @else {
+        <p class="empty">No current chapter yet.</p>
+      }
+    </article>
+
+    <article class="card">
+      <div class="card-title">
+        <h2>Today's Chapter</h2>
+      </div>
+      @if (summary.todayPlannedChapter; as planned) {
+        <div class="chapter-card">
+          <p>{{ planned.bookTitle || planned.book }}</p>
+          <strong>{{ planned.chapterTitle || planned.chapter }}</strong>
+          <small>{{ planned.scheduledDate }}</small>
+        </div>
+      } @else {
+        <p class="empty">Nothing planned for today.</p>
+      }
+    </article>
+  </section>
+
+  <section class="card">
+    <div class="card-title">
+      <h2>Progress by Series</h2>
+    </div>
+    <div class="series-list">
+      @for (series of summary.progressBySeries; track series.id) {
+        <div class="series-row">
+          <span>{{ series.name }}</span>
+          <div class="progress">
+            <span [style.width.%]="series.progressPercentage"></span>
+          </div>
+          <strong>{{ series.progressPercentage }}%</strong>
+        </div>
+      }
+    </div>
+  </section>
+} @else {
+  <section class="empty-state">
+    <h1>Dashboard is waiting for the API</h1>
+    <p>Start your backend and keep it available at http://localhost:3000/api.</p>
+  </section>
+}

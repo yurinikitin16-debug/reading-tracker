@@ -1,0 +1,20 @@
+<aside class="sidebar">
+  <a class="brand" routerLink="/dashboard" aria-label="ReadTracker dashboard">
+    <span class="brand-mark">R</span>
+    <span>ReadTracker</span>
+  </a>
+
+  <nav class="nav" aria-label="Main navigation">
+    @for (item of navItems; track item.path) {
+      <a
+        class="nav-link"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: item.path === '/dashboard' }"
+      >
+        <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+        <span>{{ item.label }}</span>
+      </a>
+    }
+  </nav>
+</aside>

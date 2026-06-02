@@ -1,0 +1,206 @@
+<section class="reading-plan-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Plan</p>
+      <h1>Reading Plan</h1>
+    </div>
+
+    <button class="primary" type="button" (click)="openAddPlanModal()">+ Add Book to Plan</button>
+  </header>
+
+  @if (errorMessage()) {
+    <p class="notice">{{ errorMessage() }}</p>
+  }
+
+  @if (isLoadingPlan()) {
+    <section class="empty-state">
+      <h2>Loading plan...</h2>
+    </section>
+  } @else {
+    <section class="plan-list">
+      @for (group of planGroups(); track group.key) {
+        <article class="plan-group" [class.completed]="group.completedChapters === group.totalChapters">
+          <header class="plan-group-header" [class.collapsed]="isGroupCollapsed(group.key)" (click)="toggleGroup(group.key)">
+            <div class="book-cover">
+              @if (group.bookCoverUrl) {
+                <img [src]="group.bookCoverUrl" [alt]="group.bookTitle + ' cover'" />
+              } @else {
+                <span aria-hidden="true"></span>
+              }
+            </div>
+
+            <div class="plan-group-title">
+              <p>{{ group.seriesName }}</p>
+              <h2>{{ group.bookTitle }}</h2>
+              <span>
+                {{ group.startDate | date: 'MMM d, y' }} - {{ group.endDate | date: 'MMM d, y' }}
+              </span>
+              @if (group.completedChapters === group.totalChapters) {
+                <em>Completed</em>
+              }
+            </div>
+
+            <div class="plan-group-stat">
+              <strong>{{ group.completedChapters }} / {{ group.totalChapters }}</strong>
+              <span>chapters</span>
+            </div>
+
+            <button class="collapse-button" type="button" [attr.aria-expanded]="!isGroupCollapsed(group.key)" aria-label="Toggle book chapters">
+              @if (isGroupCollapsed(group.key)) {
+                +
+              } @else {
+                -
+              }
+            </button>
+          </header>
+
+          @if (!isGroupCollapsed(group.key)) {
+            <div class="chapter-table">
+              @for (item of group.items; track item.chapterId) {
+                <div class="chapter-row" [class.done]="item.doneDate">
+                  <time>{{ item.scheduledDate | date: 'MMM d' }}</time>
+                  <div>
+                    <strong>{{ item.chapterTitle || item.chapter || ('Chapter ' + item.chapterOrder) }}</strong>
+                    <span>
+                      @if (item.pages) {
+                        {{ item.pages }} pages
+                      } @else {
+                        Chapter {{ item.chapterOrder || '-' }}
+                      }
+                    </span>
+                  </div>
+                <div class="chapter-actions">
+                  @if (item.doneDate) {
+                    <span>Read {{ item.doneDate | date: 'MMM d' }}</span>
+                    <button class="ghost" type="button" (click)="unmarkRead(item.chapterId)">Read</button>
+                  } @else {
+                    <button class="primary" type="button" (click)="openMarkReadModal(item)">Mark read</button>
+                  }
+                </div>
+              </div>
+            }
+            </div>
+          }
+        </article>
+      } @empty {
+        <section class="empty-state">
+          <h2>No reading plan yet</h2>
+          <p>Add a book and the tracker will schedule one chapter per day.</p>
+        </section>
+      }
+    </section>
+  }
+</section>
+
+@if (isAddPlanOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="closeAddPlanModal()">
+    <section class="modal plan-modal" role="dialog" aria-modal="true" aria-labelledby="add-plan-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2 id="add-plan-title">Add Book to Plan</h2>
+        <button class="icon-button" type="button" aria-label="Close modal" (click)="closeAddPlanModal()">x</button>
+      </header>
+
+      <form [formGroup]="addPlanForm" (ngSubmit)="addBookToPlan()">
+        <div class="form-grid">
+          <label>
+            <span>Series</span>
+            <select formControlName="seriesId" (change)="selectSeriesByValue($any($event.target).value)">
+              <option value="0" disabled>Select series</option>
+              @for (item of series(); track item.id) {
+                <option [value]="item.id">{{ item.name }}</option>
+              }
+            </select>
+          </label>
+
+          <label>
+            <span>Book</span>
+            <select formControlName="bookId" (change)="selectBookByValue($any($event.target).value)">
+              <option value="0" disabled>Select book</option>
+              @for (book of availableBooks(); track book.id) {
+                <option [value]="book.id">{{ book.title }}</option>
+              }
+            </select>
+          </label>
+        </div>
+
+        <label>
+          <span>Start date</span>
+          <input formControlName="startDate" type="date" />
+        </label>
+
+        <section class="preview-panel">
+          <header>
+            <h3>Preview</h3>
+            @if (selectedBook(); as book) {
+              <span>{{ book.title }}</span>
+            }
+          </header>
+
+          @if (isLoadingBooks() || isLoadingChapters()) {
+            <p class="muted">Loading preview...</p>
+          } @else if (previewChapters().length) {
+            <div class="preview-list">
+              @for (chapter of previewChapters(); track chapter.chapterOrder) {
+                <div class="preview-row">
+                  <time>{{ chapter.date | date: 'MMM d' }}</time>
+                  <strong>{{ chapter.chapterOrder }}. {{ chapter.title }}</strong>
+                  <span>
+                    @if (chapter.pages) {
+                      {{ chapter.pages }} pages
+                    } @else {
+                      pages not set
+                    }
+                  </span>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="muted">Select a book with chapters to preview the schedule.</p>
+          }
+        </section>
+
+        <div class="modal-actions">
+          <button class="ghost" type="button" (click)="closeAddPlanModal()">Cancel</button>
+          <button class="primary" type="submit" [disabled]="previewChapters().length === 0 || isAddingPlan()">
+            @if (isAddingPlan()) {
+              Adding...
+            } @else {
+              Add {{ previewChapters().length }} Chapters
+            }
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+@if (isMarkReadOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="closeMarkReadModal()">
+    <section class="modal read-modal" role="dialog" aria-modal="true" aria-labelledby="mark-read-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2 id="mark-read-title">Mark Chapter Read</h2>
+        <button class="icon-button" type="button" aria-label="Close modal" (click)="closeMarkReadModal()">x</button>
+      </header>
+
+      @if (activeReadItem(); as item) {
+        <div class="read-summary">
+          <p>{{ item.bookTitle || item.book }}</p>
+          <strong>{{ item.chapterTitle || item.chapter || ('Chapter ' + item.chapterOrder) }}</strong>
+          <span>Planned for {{ item.scheduledDate | date: 'MMM d, y' }}</span>
+        </div>
+      }
+
+      <form [formGroup]="markReadForm" (ngSubmit)="markRead()">
+        <label>
+          <span>Done date</span>
+          <input #doneDateInput formControlName="doneDate" type="date" />
+        </label>
+
+        <div class="modal-actions">
+          <button class="ghost" type="button" (click)="closeMarkReadModal()">Cancel</button>
+          <button class="primary" type="submit">Mark read</button>
+        </div>
+      </form>
+    </section>
+  </div>
+}

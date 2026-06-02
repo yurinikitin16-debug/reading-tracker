@@ -1,0 +1,57 @@
+.metric-grid,
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.content-grid {
+  grid-template-columns: 1.4fr 1fr;
+  margin-top: 16px;
+}
+
+.hero-progress strong {
+  display: block;
+  margin: 18px 0 14px;
+  font-size: clamp(2.2rem, 6vw, 4rem);
+}
+
+.metric strong {
+  display: block;
+  margin-top: 18px;
+  font-size: 2.4rem;
+}
+
+.chapter-card {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-strong);
+}
+
+.chapter-card p,
+.chapter-card strong,
+.chapter-card small {
+  margin: 0;
+}
+
+.series-list {
+  display: grid;
+  gap: 14px;
+}
+
+.series-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(140px, 2fr) 54px;
+  gap: 14px;
+  align-items: center;
+}
+
+@media (max-width: 920px) {
+  .metric-grid,
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}

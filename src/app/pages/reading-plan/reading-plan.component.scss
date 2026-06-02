@@ -1,0 +1,267 @@
+.page-header {
+  align-items: center;
+}
+
+.notice {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(251, 113, 133, 0.32);
+  border-radius: 8px;
+  background: rgba(251, 113, 133, 0.08);
+  color: #fecdd3;
+}
+
+.plan-list {
+  display: grid;
+  gap: 16px;
+}
+
+.plan-group {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: var(--shadow);
+}
+
+.plan-group.completed {
+  border-color: rgba(74, 222, 128, 0.28);
+  background:
+    linear-gradient(90deg, rgba(74, 222, 128, 0.08), transparent 36%),
+    rgba(255, 255, 255, 0.035);
+}
+
+.plan-group.completed .plan-group-title h2 {
+  color: rgba(246, 247, 251, 0.82);
+}
+
+.plan-group-header {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 110px 38px;
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.plan-group-header.collapsed {
+  border-bottom: 0;
+}
+
+.plan-group-header:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.book-cover {
+  display: grid;
+  width: 54px;
+  height: 76px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: linear-gradient(145deg, rgba(139, 92, 246, 0.5), transparent 52%), #171b26;
+}
+
+.book-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.book-cover span {
+  width: 24px;
+  height: 34px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 4px;
+}
+
+.plan-group-title {
+  display: grid;
+  gap: 5px;
+}
+
+.plan-group-title h2,
+.plan-group-title p {
+  margin: 0;
+}
+
+.plan-group-title p,
+.plan-group-title span,
+.plan-group-stat span,
+.chapter-row span,
+.muted {
+  color: var(--muted);
+}
+
+.plan-group-title em {
+  width: fit-content;
+  padding: 3px 8px;
+  border: 1px solid rgba(74, 222, 128, 0.28);
+  border-radius: 999px;
+  background: rgba(74, 222, 128, 0.08);
+  color: var(--success);
+  font-size: 0.76rem;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.plan-group-stat {
+  display: grid;
+  gap: 4px;
+}
+
+.collapse-button {
+  width: 38px;
+  min-width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 1.1rem;
+}
+
+.chapter-table {
+  display: grid;
+}
+
+.chapter-row {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr) 112px;
+  gap: 14px;
+  align-items: center;
+  min-height: 62px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.chapter-row:last-child {
+  border-bottom: 0;
+}
+
+.chapter-row.done {
+  background: rgba(74, 222, 128, 0.06);
+}
+
+.chapter-row time {
+  color: var(--accent-soft);
+  font-weight: 700;
+}
+
+.chapter-row div {
+  display: grid;
+  gap: 4px;
+}
+
+.chapter-actions {
+  justify-items: end;
+}
+
+.chapter-actions span {
+  color: var(--success);
+  font-size: 0.82rem;
+}
+
+.plan-modal {
+  width: min(100%, 820px);
+}
+
+.read-modal {
+  width: min(100%, 460px);
+}
+
+.read-summary {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.read-summary p,
+.read-summary strong,
+.read-summary span {
+  margin: 0;
+}
+
+.read-summary p,
+.read-summary span {
+  color: var(--muted);
+}
+
+.preview-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.preview-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.preview-panel h3 {
+  margin: 0;
+}
+
+.preview-list {
+  display: grid;
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.preview-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) 110px;
+  gap: 12px;
+  align-items: center;
+  min-height: 42px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.preview-row:last-child {
+  border-bottom: 0;
+}
+
+@media (max-width: 720px) {
+  .plan-modal {
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+  }
+
+  .plan-modal .form-grid,
+  .preview-panel header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .preview-list {
+    max-height: 42vh;
+  }
+
+  .plan-group-header,
+  .chapter-row,
+  .preview-row {
+    grid-template-columns: 1fr;
+  }
+
+  .chapter-row,
+  .preview-row {
+    min-height: auto;
+    gap: 6px;
+    padding: 14px 16px;
+  }
+
+  .plan-group-stat {
+    grid-template-columns: auto 1fr;
+  }
+}

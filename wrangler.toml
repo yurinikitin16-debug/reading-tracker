@@ -1,0 +1,2 @@
+name = "reading-tracker"
+pages_build_output_dir = "dist/reading_tracker/browser"

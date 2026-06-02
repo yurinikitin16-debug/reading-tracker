@@ -1,0 +1,152 @@
+<section class="series-page">
+  <header class="series-header">
+    <div>
+      <p class="eyebrow">Library</p>
+      <h1>My Series</h1>
+    </div>
+
+    <button class="primary add-button" type="button" (click)="openCreateModal()">
+      <span aria-hidden="true">+</span>
+      Add Series
+    </button>
+  </header>
+
+  <div class="series-tools">
+    <label class="search-field">
+      <span aria-hidden="true">⌕</span>
+      <input
+        type="search"
+        placeholder="Search series..."
+        [value]="searchTerm()"
+        (input)="searchTerm.set($any($event.target).value)"
+      />
+    </label>
+  </div>
+
+  @if (errorMessage()) {
+    <p class="notice">{{ errorMessage() }}</p>
+  }
+
+  <section class="series-list" aria-live="polite">
+    @if (isLoading()) {
+      <article class="series-row skeleton"></article>
+      <article class="series-row skeleton"></article>
+      <article class="series-row skeleton"></article>
+    } @else {
+      @for (item of filteredSeries(); track item.id) {
+        <article class="series-row">
+          <a class="series-main" routerLink="/book-progress" [queryParams]="{ series: item.id }">
+            <div class="series-cover">
+              @if (item.coverUrl) {
+                <img [src]="item.coverUrl" [alt]="item.name + ' cover'" />
+              } @else {
+                <span aria-hidden="true"></span>
+              }
+            </div>
+
+            <div class="series-info">
+              <h2>{{ item.name }}</h2>
+              <p>
+                @if (item.booksCount) {
+                  {{ item.booksCount }} books in series
+                } @else {
+                  No books yet
+                }
+              </p>
+              <div class="progress-line">
+                <div class="progress">
+                  <span [style.width.%]="item.progressPercentage"></span>
+                </div>
+                <strong>{{ item.progressPercentage }}%</strong>
+              </div>
+            </div>
+
+            <div class="series-stat">
+              <strong>{{ item.completedChapters }} / {{ item.totalChapters }}</strong>
+              <span>chapters</span>
+            </div>
+
+            <div class="series-stat">
+              <strong>{{ item.completedBooksCount }} / {{ item.booksCount }}</strong>
+              <span>books</span>
+            </div>
+          </a>
+
+          <div class="row-menu" (click)="$event.stopPropagation()">
+            <button class="icon-button" type="button" aria-label="Series actions" (click)="toggleMenu(item.id)">
+              ⋮
+            </button>
+
+            @if (menuOpenId() === item.id) {
+              <div class="menu-panel">
+                <button type="button" (click)="openEditModal(item)">Edit</button>
+                <button class="danger-text" type="button" (click)="askDelete(item)">Delete</button>
+              </div>
+            }
+          </div>
+        </article>
+      } @empty {
+        <div class="empty-state">
+          <h2>No series found</h2>
+          <p>Add a new series or change the search query.</p>
+        </div>
+      }
+    }
+  </section>
+</section>
+
+@if (isEditorOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="closeEditor()">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="series-editor-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2 id="series-editor-title">
+          @if (modalMode() === 'edit') {
+            Edit Series
+          } @else {
+            Add Series
+          }
+        </h2>
+        <button class="icon-button" type="button" aria-label="Close modal" (click)="closeEditor()">×</button>
+      </header>
+
+      <form [formGroup]="form" (ngSubmit)="saveSeries()">
+        <label>
+          <span>Series name</span>
+          <input formControlName="name" placeholder="A Song of Ice and Fire" autofocus />
+        </label>
+        <label>
+          <span>Cover URL</span>
+          <input formControlName="coverUrl" placeholder="https://..." />
+        </label>
+
+        <div class="modal-actions">
+          <button class="ghost" type="button" (click)="closeEditor()">Cancel</button>
+          <button class="primary" type="submit">
+            @if (modalMode() === 'edit') {
+              Save
+            } @else {
+              Add Series
+            }
+          </button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+@if (confirmDeleteSeries(); as item) {
+  <div class="modal-backdrop" role="presentation" (click)="cancelDelete()">
+    <section class="modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2 id="delete-title">Delete series?</h2>
+      </header>
+      <p>
+        This will delete "{{ item.name }}" and all books, chapters, and progress inside it.
+      </p>
+      <div class="modal-actions">
+        <button class="ghost" type="button" (click)="cancelDelete()">Cancel</button>
+        <button class="danger" type="button" (click)="deleteSeries()">Delete</button>
+      </div>
+    </section>
+  </div>
+}

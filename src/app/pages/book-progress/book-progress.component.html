@@ -1,0 +1,303 @@
+<section class="book-progress-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Progress</p>
+      <h1>Book Progress</h1>
+    </div>
+
+    <button class="primary" type="button" [disabled]="!selectedSeries()" (click)="openCreateBookModal()">
+      <span aria-hidden="true">+</span>
+      Add Book
+    </button>
+  </header>
+
+  <section class="toolbar">
+    <label>
+      <span>Series</span>
+      <select [value]="selectedSeries()?.id ?? ''" (change)="selectSeriesByValue($any($event.target).value)">
+        @for (item of series(); track item.id) {
+          <option [value]="item.id">{{ item.name }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="search-field">
+      <span>Search</span>
+      <input
+        type="search"
+        placeholder="Search books..."
+        [value]="searchTerm()"
+        (input)="searchTerm.set($any($event.target).value)"
+      />
+    </label>
+  </section>
+
+  @if (errorMessage()) {
+    <p class="notice">{{ errorMessage() }}</p>
+  }
+
+  <section class="content-grid">
+    <div class="books-column">
+      @if (isLoadingBooks() || isLoadingSeries()) {
+        <article class="card empty-card">Loading books...</article>
+      } @else {
+        @for (book of filteredBooks(); track book.id) {
+          <article class="book-row" [class.active]="selectedBook()?.id === book.id">
+            <button class="book-main" type="button" (click)="selectBook(book)">
+              <div class="cover">
+                @if (book.coverUrl) {
+                  <img [src]="book.coverUrl" [alt]="book.title + ' cover'" />
+                } @else {
+                  <span aria-hidden="true"></span>
+                }
+              </div>
+
+              <div class="book-info">
+                <h2>{{ book.title }}</h2>
+                <p>{{ book.author || 'Unknown author' }}</p>
+                <div class="progress-line">
+                  <div class="progress">
+                    <span [style.width.%]="book.progressPercentage"></span>
+                  </div>
+                  <strong>{{ book.progressPercentage }}%</strong>
+                </div>
+              </div>
+
+              <div class="book-stat">
+                <strong>{{ book.completedChapters }} / {{ book.totalChapters }}</strong>
+                <span>chapters</span>
+              </div>
+            </button>
+
+            <div class="row-menu" (click)="$event.stopPropagation()">
+              <button class="icon-button" type="button" aria-label="Book actions" (click)="toggleBookMenu(book.id)">⋮</button>
+              @if (bookMenuOpenId() === book.id) {
+                <div class="menu-panel">
+                  <button type="button" (click)="openEditBookModal(book)">Edit</button>
+                  <button class="danger-text" type="button" (click)="askDeleteBook(book)">Delete</button>
+                </div>
+              }
+            </div>
+          </article>
+        } @empty {
+          <article class="card empty-card">
+            <h2>No books yet</h2>
+            <p>Add the first book for this series.</p>
+          </article>
+        }
+      }
+    </div>
+
+    <aside class="details-panel">
+      @if (selectedBook(); as book) {
+        <header class="details-header">
+          <div>
+            <p class="eyebrow">Series Details</p>
+            <h2>{{ book.title }}</h2>
+            <span>{{ book.completedChapters }} / {{ book.totalChapters }} chapters</span>
+          </div>
+          <div class="details-actions">
+            <button class="ghost" type="button" (click)="openCreateChapterModal()">+ Single</button>
+            <button class="primary" type="button" (click)="openBulkChapterImport()">Import Chapters</button>
+          </div>
+        </header>
+
+        <div class="progress">
+          <span [style.width.%]="book.progressPercentage"></span>
+        </div>
+
+        <div class="chapter-list">
+          @if (isLoadingChapters()) {
+            <p class="muted">Loading chapters...</p>
+          } @else {
+            @for (chapter of chapters(); track chapter.id) {
+              <article class="chapter-row">
+                <div>
+                  <strong>{{ chapter.chapterOrder }}. {{ chapter.title }}</strong>
+                  <span>
+                    @if (chapter.pages) {
+                      {{ chapter.pages }} pages
+                    } @else {
+                      pages not set
+                    }
+                  </span>
+                </div>
+                <div class="row-menu" (click)="$event.stopPropagation()">
+                  <button class="icon-button" type="button" aria-label="Chapter actions" (click)="toggleChapterMenu(chapter.id)">⋮</button>
+                  @if (chapterMenuOpenId() === chapter.id) {
+                    <div class="menu-panel">
+                      <button type="button" (click)="openEditChapterModal(chapter)">Edit</button>
+                      <button class="danger-text" type="button" (click)="askDeleteChapter(chapter)">Delete</button>
+                    </div>
+                  }
+                </div>
+              </article>
+            } @empty {
+              <p class="muted">No chapters yet.</p>
+            }
+          }
+        </div>
+      } @else {
+        <div class="empty-details">
+          <h2>Select a book</h2>
+          <p>Book chapters and actions will appear here.</p>
+        </div>
+      }
+    </aside>
+  </section>
+</section>
+
+@if (isBookEditorOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="closeBookEditor()">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="book-editor-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2 id="book-editor-title">{{ bookModalMode() === 'edit' ? 'Edit Book' : 'Add Book' }}</h2>
+        <button class="icon-button" type="button" aria-label="Close modal" (click)="closeBookEditor()">×</button>
+      </header>
+
+      <form [formGroup]="bookForm" (ngSubmit)="saveBook()">
+        <label>
+          <span>Title</span>
+          <input formControlName="title" placeholder="A Game of Thrones" autofocus />
+        </label>
+        <label>
+          <span>Author</span>
+          <input formControlName="author" placeholder="George R. R. Martin" />
+        </label>
+        <div class="form-grid">
+          <label>
+            <span>Order</span>
+            <input formControlName="bookOrder" type="number" min="1" />
+          </label>
+          <label>
+            <span>Pages</span>
+            <input formControlName="pages" type="number" min="1" />
+          </label>
+        </div>
+        <label>
+          <span>Cover URL</span>
+          <input formControlName="coverUrl" placeholder="https://..." />
+        </label>
+        <div class="modal-actions">
+          <button class="ghost" type="button" (click)="closeBookEditor()">Cancel</button>
+          <button class="primary" type="submit">{{ bookModalMode() === 'edit' ? 'Save' : 'Add Book' }}</button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+@if (isChapterEditorOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="closeChapterEditor()">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="chapter-editor-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2 id="chapter-editor-title">{{ chapterModalMode() === 'edit' ? 'Edit Chapter' : 'Add Chapter' }}</h2>
+        <button class="icon-button" type="button" aria-label="Close modal" (click)="closeChapterEditor()">×</button>
+      </header>
+
+      <form [formGroup]="chapterForm" (ngSubmit)="saveChapter()">
+        <label>
+          <span>Title</span>
+          <input formControlName="title" placeholder="Chapter title" autofocus />
+        </label>
+        <div class="form-grid">
+          <label>
+            <span>Order</span>
+            <input formControlName="chapterOrder" type="number" min="1" />
+          </label>
+          <label>
+            <span>Pages</span>
+            <input formControlName="pages" type="number" min="1" />
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button class="ghost" type="button" (click)="closeChapterEditor()">Cancel</button>
+          <button class="primary" type="submit">{{ chapterModalMode() === 'edit' ? 'Save' : 'Add Chapter' }}</button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
+
+@if (isBulkChapterImportOpen()) {
+  <div class="modal-backdrop" role="presentation" (click)="closeBulkChapterImport()">
+    <section class="modal bulk-modal" role="dialog" aria-modal="true" aria-labelledby="bulk-chapter-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2 id="bulk-chapter-title">Import Chapters</h2>
+        <button class="icon-button" type="button" aria-label="Close modal" (click)="closeBulkChapterImport()">×</button>
+      </header>
+
+      <label>
+        <span>Chapter list</span>
+        <textarea
+          rows="10"
+          placeholder="1. Prologue | 12&#10;2. Bran I | 18&#10;3. Catelyn I"
+          [value]="bulkChapterText()"
+          (input)="bulkChapterText.set($any($event.target).value)"
+        ></textarea>
+      </label>
+
+      <div class="format-note">
+        Format: <strong>chapterOrder. title | pages</strong>. Pages are optional. If order is missing, it is assigned automatically.
+      </div>
+
+      <div class="bulk-preview">
+        <h3>Preview</h3>
+        @if (parsedBulkChapters().length) {
+          <div class="preview-list">
+            @for (row of parsedBulkChapters(); track row.lineNumber) {
+              <div class="preview-row" [class.invalid]="row.error">
+                <span>#{{ row.chapterOrder }}</span>
+                <strong>{{ row.title || 'Untitled' }}</strong>
+                <span>{{ row.pages ? row.pages + ' pages' : 'pages not set' }}</span>
+                @if (row.error) {
+                  <em>{{ row.error }}</em>
+                }
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="muted">Paste chapters to see a preview.</p>
+        }
+      </div>
+
+      <div class="modal-actions">
+        <button class="ghost" type="button" (click)="closeBulkChapterImport()">Cancel</button>
+        <button
+          class="primary"
+          type="button"
+          [disabled]="validBulkChapters().length === 0 || bulkImportHasErrors()"
+          (click)="importBulkChapters()"
+        >
+          Import {{ validBulkChapters().length }} Chapters
+        </button>
+      </div>
+    </section>
+  </div>
+}
+
+@if (confirmDeleteBook(); as book) {
+  <div class="modal-backdrop" role="presentation" (click)="cancelDeleteBook()">
+    <section class="modal confirm-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <h2>Delete book?</h2>
+      <p>This will delete "{{ book.title }}" and all its chapters.</p>
+      <div class="modal-actions">
+        <button class="ghost" type="button" (click)="cancelDeleteBook()">Cancel</button>
+        <button class="danger" type="button" (click)="deleteBook()">Delete</button>
+      </div>
+    </section>
+  </div>
+}
+
+@if (confirmDeleteChapter(); as chapter) {
+  <div class="modal-backdrop" role="presentation" (click)="cancelDeleteChapter()">
+    <section class="modal confirm-modal" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <h2>Delete chapter?</h2>
+      <p>This will delete "{{ chapter.title }}" and its progress record.</p>
+      <div class="modal-actions">
+        <button class="ghost" type="button" (click)="cancelDeleteChapter()">Cancel</button>
+        <button class="danger" type="button" (click)="deleteChapter()">Delete</button>
+      </div>
+    </section>
+  </div>
+}
