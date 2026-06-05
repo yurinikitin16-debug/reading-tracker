@@ -31,7 +31,7 @@
 
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 16px;
 }
@@ -92,40 +92,16 @@
   color: var(--muted);
 }
 
-.bar-chart {
-  display: grid;
-  grid-template-columns: repeat(var(--bar-count, 30), minmax(4px, 1fr));
-  gap: 7px;
-  align-items: end;
-  height: 220px;
-  padding-top: 18px;
+.line-chart {
+  position: relative;
+  height: 260px;
+  margin-top: 18px;
+  padding: 4px 0 0;
 }
 
-.bar-column {
-  display: flex;
-  align-items: end;
-  height: 100%;
-  min-width: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-}
-
-.bar-column span {
+.line-chart canvas {
   width: 100%;
-  min-height: 2px;
-  border-radius: 6px 6px 0 0;
-  background: linear-gradient(180deg, var(--accent-soft), var(--accent));
-}
-
-.bar-column:hover span,
-.bar-column.selected span {
-  filter: brightness(1.14);
-}
-
-.bar-column.selected span {
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.16);
+  height: 100%;
 }
 
 .chart-selection {
@@ -202,6 +178,10 @@
   .stat-grid,
   .stats-layout {
     grid-template-columns: 1fr;
+  }
+
+  .line-chart {
+    height: 240px;
   }
 
   .average-grid {

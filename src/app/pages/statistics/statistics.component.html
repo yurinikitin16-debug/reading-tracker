@@ -25,10 +25,6 @@
 
     <section class="stat-grid">
       <article class="card stat">
-        <span>Chapters Read</span>
-        <strong>{{ summary.completedChapters }}</strong>
-      </article>
-      <article class="card stat">
         <span>Completed Books</span>
         <strong>{{ summary.completedBooksCount }}</strong>
       </article>
@@ -47,7 +43,7 @@
         <section class="stats-layout">
           <article class="card chart-card">
             <div class="card-title">
-              <h2>Chapters Read</h2>
+              <h2>Reading Trend</h2>
               <label class="range-select">
                 <span class="sr-only">Chart range</span>
                 <select [ngModel]="chartRange()" (ngModelChange)="setChartRange($event)">
@@ -57,18 +53,8 @@
                 </select>
               </label>
             </div>
-            <div class="bar-chart" [style.--bar-count]="selectedRangeDays().length">
-              @for (day of selectedRangeDays(); track day.date) {
-                <button
-                  class="bar-column"
-                  type="button"
-                  [class.selected]="selectedChartDay()?.date === day.date"
-                  [attr.aria-label]="day.date + ': ' + day.completedChapters + ' chapters'"
-                  (click)="selectChartDay(day)"
-                >
-                  <span [style.height]="barHeight(day.completedChapters, maxSelectedRange())"></span>
-                </button>
-              }
+            <div class="line-chart">
+              <canvas #readingTrendChart aria-label="Reading trend line chart"></canvas>
             </div>
             @if (selectedChartDay(); as day) {
               <p class="chart-selection">

@@ -1,6 +1,7 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, ElementRef, ViewChild, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import Chart from 'chart.js/auto';
 import { catchError, of } from 'rxjs';
 
 import { StatisticsService } from '../../core/api/statistics.service';
@@ -23,6 +24,15 @@ interface ChartRangeOption {
 })
 export class StatisticsComponent {
   private readonly statisticsService = inject(StatisticsService);
+  private readonly destroyRef = inject(DestroyRef);
+  private chart: Chart<'line'> | null = null;
+  private chartCanvas: ElementRef<HTMLCanvasElement> | null = null;
+
+  @ViewChild('readingTrendChart')
+  set readingTrendChart(canvas: ElementRef<HTMLCanvasElement> | undefined) {
+    this.chartCanvas = canvas ?? null;
+    this.renderChart();
+  }
 
   readonly activeTab = signal<StatisticsTab>('overview');
   readonly chartRange = signal<ChartRange>('30');
@@ -109,10 +119,6 @@ export class StatisticsComponent {
     this.last30Days().filter((day) => day.completedChapters > 0).length
   );
 
-  readonly maxSelectedRange = computed(() =>
-    Math.max(1, ...this.selectedRangeDays().map((day) => day.completedChapters))
-  );
-
   readonly maxMonth = computed(() =>
     Math.max(1, ...this.monthStats().map((month) => month.completedChapters))
   );
@@ -122,6 +128,12 @@ export class StatisticsComponent {
   );
 
   constructor() {
+    effect(() => {
+      this.selectedRangeDays();
+      this.renderChart();
+    });
+
+    this.destroyRef.onDestroy(() => this.chart?.destroy());
     this.loadStatistics();
   }
 
@@ -155,11 +167,8 @@ export class StatisticsComponent {
       .subscribe((summary) => {
       this.summary.set(summary);
       this.isLoading.set(false);
+      queueMicrotask(() => this.renderChart());
     });
-  }
-
-  barHeight(value: number, max: number) {
-    return `${Math.max(value > 0 ? 10 : 0, Math.round((value / max) * 100))}%`;
   }
 
   progressWidth(completed: number, total: number) {
@@ -179,5 +188,123 @@ export class StatisticsComponent {
     const day = String(date.getDate()).padStart(2, '0');
 
     return `${year}-${month}-${day}`;
+  }
+
+  private renderChart() {
+    if (!this.chartCanvas || this.activeTab() !== 'overview') {
+      return;
+    }
+
+    const canvas = this.chartCanvas.nativeElement;
+    const context = canvas.getContext('2d');
+
+    if (!context) {
+      return;
+    }
+
+    const days = this.selectedRangeDays();
+    const labels = days.map((day) => this.formatChartLabel(day.date));
+    const values = days.map((day) => day.completedChapters);
+    const gradient = context.createLinearGradient(0, 0, canvas.clientWidth || 720, 0);
+    gradient.addColorStop(0, '#8b5cf6');
+    gradient.addColorStop(1, '#38bdf8');
+
+    if (!this.chart) {
+      this.chart = new Chart(context, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            data: values,
+            borderColor: gradient,
+            backgroundColor: 'rgba(139, 92, 246, 0.14)',
+            borderWidth: 2,
+            fill: true,
+            pointBackgroundColor: '#111520',
+            pointBorderColor: '#a78bfa',
+            pointBorderWidth: 2,
+            pointHoverBackgroundColor: '#8b5cf6',
+            pointHoverBorderColor: '#f6f7fb',
+            pointHoverRadius: 5,
+            pointRadius: 4,
+            tension: 0.36
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 180 },
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          },
+          onClick: (_event, elements) => {
+            const index = elements[0]?.index;
+            const day = typeof index === 'number' ? days[index] : null;
+
+            if (day) {
+              this.selectedChartDay.set(day);
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              displayColors: false,
+              callbacks: {
+                title: (items) => items[0]?.label ?? '',
+                label: (item) => `${item.parsed.y} chapters`
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: {
+                color: 'rgba(255, 255, 255, 0.07)',
+                tickColor: 'rgba(255, 255, 255, 0.08)'
+              },
+              ticks: {
+                color: '#8f98aa',
+                maxRotation: 0,
+                autoSkip: true,
+                maxTicksLimit: 6
+              },
+              border: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              }
+            },
+            y: {
+              beginAtZero: true,
+              grace: '20%',
+              grid: {
+                color: 'rgba(255, 255, 255, 0.07)',
+                tickColor: 'rgba(255, 255, 255, 0.08)'
+              },
+              ticks: {
+                color: '#8f98aa',
+                precision: 0,
+                stepSize: 1
+              },
+              border: {
+                color: 'rgba(255, 255, 255, 0.1)'
+              }
+            }
+          }
+        }
+      });
+
+      return;
+    }
+
+    this.chart.data.labels = labels;
+    this.chart.data.datasets[0].data = values;
+    this.chart.data.datasets[0].borderColor = gradient;
+    this.chart.update();
+  }
+
+  private formatChartLabel(date: string) {
+    return new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric'
+    });
   }
 }
