@@ -41,7 +41,10 @@
               <span class="count completed">{{ cell.completedChapters }}</span>
             }
             @if (cell.openPlannedChapters) {
-              <span class="count planned">{{ cell.openPlannedChapters }}</span>
+              <span class="count planned">→</span>
+            }
+            @if (cell.alreadyDoneChapters) {
+              <span class="count already-done">✓</span>
             }
             @if (cell.missedChapters) {
               <span class="count missed">{{ cell.missedChapters }}</span>
@@ -54,6 +57,9 @@
             @if (cell.openPlannedChapters) {
               <i class="planned"></i>
             }
+            @if (cell.alreadyDoneChapters) {
+              <i class="already-done"></i>
+            }
             @if (cell.missedChapters) {
               <i class="missed"></i>
             }
@@ -65,6 +71,7 @@
     <div class="legend">
       <span><i class="completed"></i> Completed</span>
       <span><i class="planned"></i> Planned</span>
+      <span><i class="already-done"></i> Already done</span>
       <span><i class="missed"></i> Missed</span>
     </div>
   </article>
@@ -89,7 +96,7 @@
 
       <div class="detail-list">
         @for (item of selectedScheduled(); track item.chapterId) {
-          <article class="detail-item" [class.done]="item.doneDate">
+          <article class="detail-item" [class.done]="item.doneDate" [class.already-done-item]="getScheduledStatus(item) === 'Already done'">
             <div>
               <strong>{{ getItemChapter(item) }}</strong>
               <small>{{ getItemBook(item) }}</small>
@@ -97,7 +104,7 @@
                 <small>{{ getItemSeries(item) }}</small>
               }
             </div>
-            <span>{{ item.doneDate ? 'Read' : 'Planned' }}</span>
+            <span>{{ getScheduledStatus(item) }}</span>
           </article>
         } @empty {
           <p class="empty">Nothing planned.</p>

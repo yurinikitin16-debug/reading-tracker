@@ -1,50 +1,175 @@
-.metric-grid {
+.notice {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(251, 113, 133, 0.32);
+  border-radius: 8px;
+  background: rgba(251, 113, 133, 0.08);
+  color: #fecdd3;
+}
+
+.top-grid,
+.action-grid,
+.bottom-grid {
   display: grid;
-  grid-template-columns: 1.1fr 1fr 1fr;
   gap: 16px;
 }
 
-.content-grid {
-  display: grid;
-  grid-template-columns: 1.4fr 1fr;
-  gap: 16px;
+.top-grid {
+  grid-template-columns: 1.2fr 0.75fr 0.75fr;
+}
+
+.action-grid {
+  grid-template-columns: 1.35fr 0.85fr;
   margin: 16px 0;
-  align-items: stretch;
 }
 
-.series-progress-card {
-  margin-top: 0;
+.bottom-grid {
+  grid-template-columns: 1.25fr 0.85fr;
 }
 
-.metric-grid > .card,
-.content-grid > .card {
-  min-height: 158px;
+.card-title {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.metric-label {
-  color: var(--text);
-  font-weight: 700;
+.card-title h2,
+.continue-copy h3,
+.today-content h3 {
+  margin: 0;
 }
 
-.hero-progress strong {
+.card-title.compact {
+  margin-bottom: 12px;
+}
+
+.card-title span,
+.progress-facts span,
+.today-content p,
+.today-content small,
+.continue-copy p,
+.series-row small,
+.big-number + small,
+.streak-card p,
+.empty {
+  color: var(--muted);
+}
+
+.progress-card,
+.books-card,
+.streak-card {
+  min-height: 188px;
+}
+
+.ring-layout {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.progress-ring {
+  --progress: 0;
+  display: grid;
+  width: 132px;
+  min-width: 132px;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, #171b26 58%, transparent 59%),
+    conic-gradient(var(--accent) calc(var(--progress) * 3.6deg), rgba(255, 255, 255, 0.1) 0deg);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.progress-ring strong {
+  font-size: 2rem;
+}
+
+.progress-facts {
+  display: grid;
+  gap: 14px;
+}
+
+.progress-facts div {
+  display: grid;
+  gap: 4px;
+}
+
+.progress-facts strong {
+  font-size: 1.35rem;
+}
+
+.big-number {
   display: block;
-  margin: 26px 0 18px;
-  font-size: clamp(2.6rem, 5vw, 4rem);
-  line-height: 0.9;
-}
-
-.metric strong {
-  display: block;
-  margin: 26px 0 4px;
-  font-size: 2.5rem;
+  margin-top: 22px;
+  font-size: 2.6rem;
   line-height: 1;
 }
 
-.chapter-card {
+.books-bars {
   display: flex;
+  align-items: end;
+  gap: 8px;
+  height: 58px;
+  margin-top: 18px;
+}
+
+.books-bars span {
+  width: 10px;
+  border-radius: 999px 999px 0 0;
+  background: linear-gradient(180deg, var(--accent-soft), #38bdf8);
+}
+
+.streak-icon {
+  position: relative;
+  width: 18px;
+  height: 22px;
+  margin-top: 2px;
+}
+
+.streak-icon::before,
+.streak-icon::after {
+  position: absolute;
+  content: "";
+}
+
+.streak-icon::before {
+  inset: 2px 3px 1px;
+  border-radius: 70% 70% 70% 12%;
+  background: linear-gradient(145deg, #9ca3af, #4b5563);
+  box-shadow: 0 0 14px rgba(156, 163, 175, 0.18);
+  transform: rotate(45deg);
+}
+
+.streak-icon::after {
+  right: 6px;
+  bottom: 4px;
+  width: 6px;
+  height: 9px;
+  border-radius: 70% 70% 70% 12%;
+  background: #1f2430;
+  transform: rotate(45deg);
+}
+
+.streak-card.active .streak-icon {
+  filter: drop-shadow(0 0 12px rgba(251, 113, 133, 0.55));
+}
+
+.streak-card.active .streak-icon::before {
+  background: linear-gradient(145deg, #f97316 8%, #fb7185 58%, #8b5cf6 100%);
+  box-shadow: 0 0 18px rgba(251, 113, 133, 0.42);
+}
+
+.streak-card.active .streak-icon::after {
+  background: linear-gradient(145deg, #fde68a, #fb923c);
+}
+
+.continue-content {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 18px;
   align-items: center;
-  gap: 16px;
-  min-height: 116px;
   padding: 14px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -54,13 +179,15 @@
 .book-cover {
   display: grid;
   place-items: center;
-  width: 64px;
-  min-width: 64px;
-  height: 88px;
   overflow: hidden;
   border: 1px solid rgba(139, 92, 246, 0.45);
   border-radius: 8px;
   background: linear-gradient(145deg, rgba(139, 92, 246, 0.55), rgba(17, 24, 39, 0.92));
+}
+
+.book-cover.large {
+  width: 82px;
+  height: 116px;
 }
 
 .book-cover img {
@@ -70,69 +197,124 @@
 }
 
 .book-cover span {
-  width: 26px;
-  height: 40px;
+  width: 30px;
+  height: 44px;
   border: 2px solid rgba(255, 255, 255, 0.76);
-  border-radius: 3px;
+  border-radius: 4px;
 }
 
-.chapter-copy,
-.today-chapter {
+.continue-copy {
   display: grid;
-  gap: 8px;
+  gap: 9px;
   min-width: 0;
 }
 
-.chapter-copy p,
-.chapter-copy strong,
-.chapter-copy small,
-.today-chapter p,
-.today-chapter strong,
-.today-chapter small {
+.continue-copy h3 {
+  overflow: hidden;
+  font-size: 1.55rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.continue-copy p {
   margin: 0;
 }
 
-.chapter-copy p,
-.today-chapter p {
+.mini-progress {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 48px;
+  gap: 12px;
+  align-items: center;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.today-content {
+  display: grid;
+  gap: 18px;
+  min-height: 154px;
+}
+
+.today-content h3 {
+  font-size: 1.65rem;
+}
+
+.today-content p,
+.today-content small {
+  display: block;
+  margin: 8px 0 0;
+}
+
+.wide {
+  width: 100%;
+}
+
+.plan-table {
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.plan-head,
+.plan-row {
+  display: grid;
+  grid-template-columns: 54px 96px minmax(0, 1fr) 74px;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+}
+
+.plan-head {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.plan-row {
+  border-top: 1px solid var(--border);
+}
+
+.plan-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-dot {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  justify-self: end;
+  border: 1px solid var(--border);
+  border-radius: 50%;
   color: var(--text);
 }
 
-.chapter-copy strong,
-.today-chapter strong {
-  font-size: 1.05rem;
-}
-
-.chapter-copy small,
-.today-chapter small,
-.series-row small,
-.hero-progress small,
-.metric small {
-  color: var(--muted);
-}
-
-.today-chapter {
-  min-height: 116px;
-  padding: 18px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface-strong);
-}
-
-.card-title h2 {
-  font-size: 1.35rem;
+.status-dot.done {
+  border-color: rgba(74, 222, 128, 0.4);
+  background: rgba(74, 222, 128, 0.16);
+  color: #86efac;
 }
 
 .series-list {
   display: grid;
-  gap: 16px;
+  gap: 14px;
 }
 
 .series-row {
   display: grid;
-  grid-template-columns: minmax(180px, 0.9fr) minmax(180px, 2fr) 54px;
-  gap: 18px;
+  grid-template-columns: minmax(120px, 0.9fr) minmax(140px, 1.5fr) 48px;
+  gap: 12px;
   align-items: center;
-  min-width: 0;
 }
 
 .series-row > div:first-child {
@@ -141,63 +323,67 @@
   min-width: 0;
 }
 
-.series-row > div:first-child strong {
+.series-row strong,
+.series-row small {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-@media (max-width: 920px) {
-  .metric-grid,
-  .content-grid {
+@media (max-width: 1120px) {
+  .top-grid,
+  .action-grid,
+  .bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .ring-layout,
+  .continue-content {
     grid-template-columns: 1fr;
   }
 
-  .content-grid {
-    margin: 16px 0;
+  .progress-ring,
+  .book-cover.large {
+    justify-self: center;
+  }
+
+  .continue-copy h3,
+  .today-content h3 {
+    font-size: 1.25rem;
+  }
+
+  .plan-head {
+    display: none;
+  }
+
+  .plan-row {
+    grid-template-columns: 42px minmax(0, 1fr) 34px;
+    gap: 10px;
+  }
+
+  .plan-row time {
+    grid-column: 2;
+    color: var(--muted);
+    font-size: 0.86rem;
+  }
+
+  .plan-row strong {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .status-dot {
+    grid-column: 3;
+    grid-row: 1 / span 2;
   }
 
   .series-row {
     grid-template-columns: 1fr auto;
-    gap: 10px 14px;
   }
 
   .series-row .progress {
     grid-column: 1 / -1;
-  }
-
-  .series-row > strong {
-    align-self: end;
-  }
-}
-
-@media (max-width: 560px) {
-  .metric-grid,
-  .content-grid,
-  .series-list {
-    gap: 14px;
-  }
-
-  .card {
-    padding: 20px;
-  }
-
-  .chapter-card {
-    align-items: flex-start;
-    min-height: 0;
-  }
-
-  .book-cover {
-    width: 54px;
-    min-width: 54px;
-    height: 74px;
-  }
-
-  .today-chapter {
-    min-height: 0;
-  }
-
-  .series-row {
-    padding: 2px 0 4px;
   }
 }

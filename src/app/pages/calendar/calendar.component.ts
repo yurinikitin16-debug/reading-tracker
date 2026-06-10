@@ -14,6 +14,7 @@ interface CalendarCell {
   completedChapters: number;
   plannedChapters: number;
   openPlannedChapters: number;
+  alreadyDoneChapters: number;
   missedChapters: number;
 }
 
@@ -48,6 +49,7 @@ export class CalendarComponent {
       const scheduled = day?.scheduled ?? [];
       const completed = day?.completed ?? [];
       const openPlannedChapters = scheduled.filter((item) => !item.doneDate).length;
+      const alreadyDoneChapters = scheduled.filter((item) => this.isAlreadyDone(item)).length;
       const missedChapters = cell.isoDate < this.todayIso ? openPlannedChapters : 0;
 
       return {
@@ -56,6 +58,7 @@ export class CalendarComponent {
         completedChapters: day?.completedChapters ?? completed.length,
         plannedChapters: day?.plannedChapters ?? scheduled.length,
         openPlannedChapters,
+        alreadyDoneChapters,
         missedChapters
       };
     });
@@ -117,6 +120,14 @@ export class CalendarComponent {
     return item.seriesName || item.series || '';
   }
 
+  getScheduledStatus(item: ReadingPlanItem) {
+    if (this.isAlreadyDone(item)) {
+      return 'Already done';
+    }
+
+    return item.doneDate ? 'Read' : 'Planned';
+  }
+
   private shiftMonth(offset: number) {
     const month = this.currentMonth();
     this.currentMonth.set(new Date(month.getFullYear(), month.getMonth() + offset, 1));
@@ -141,6 +152,7 @@ export class CalendarComponent {
         completedChapters: 0,
         plannedChapters: 0,
         openPlannedChapters: 0,
+        alreadyDoneChapters: 0,
         missedChapters: 0
       };
     });
@@ -166,5 +178,9 @@ export class CalendarComponent {
       scheduled: [],
       completed: []
     };
+  }
+
+  private isAlreadyDone(item: ReadingPlanItem) {
+    return Boolean(item.doneDate && item.scheduledDate && item.doneDate < item.scheduledDate);
   }
 }

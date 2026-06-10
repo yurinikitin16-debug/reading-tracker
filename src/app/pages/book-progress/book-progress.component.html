@@ -227,41 +227,49 @@
         <button class="icon-button" type="button" aria-label="Close modal" (click)="closeBulkChapterImport()">×</button>
       </header>
 
-      <label>
-        <span>Chapter list</span>
-        <textarea
-          rows="10"
-          placeholder="1. Prologue | 12&#10;2. Bran I | 18&#10;3. Catelyn I"
-          [value]="bulkChapterText()"
-          (input)="bulkChapterText.set($any($event.target).value)"
-        ></textarea>
-      </label>
+      <div class="bulk-modal-body">
+        <label>
+          <span>Chapter list</span>
+          <textarea
+            rows="10"
+            placeholder="1. Prologue | 12&#10;2. Bran I | 18&#10;3. Catelyn I"
+            [value]="bulkChapterText()"
+            (input)="bulkChapterText.set($any($event.target).value)"
+          ></textarea>
+        </label>
 
-      <div class="format-note">
-        Format: <strong>chapterOrder. title | pages</strong>. Pages are optional. If order is missing, it is assigned automatically.
-      </div>
+        <div class="format-note">
+          Format: <strong>chapterOrder. title | pages</strong>. Pages are optional. If order is missing, it is assigned automatically.
+        </div>
 
-      <div class="bulk-preview">
-        <h3>Preview</h3>
-        @if (parsedBulkChapters().length) {
-          <div class="preview-list">
-            @for (row of parsedBulkChapters(); track row.lineNumber) {
-              <div class="preview-row" [class.invalid]="row.error">
-                <span>#{{ row.chapterOrder }}</span>
-                <strong>{{ row.title || 'Untitled' }}</strong>
-                <span>{{ row.pages ? row.pages + ' pages' : 'pages not set' }}</span>
-                @if (row.error) {
-                  <em>{{ row.error }}</em>
-                }
-              </div>
+        <div class="bulk-preview">
+          <h3>Preview</h3>
+          <p class="bulk-mobile-summary">
+            {{ validBulkChapters().length }} chapters ready
+            @if (bulkImportHasErrors()) {
+              <span>with errors</span>
             }
-          </div>
-        } @else {
-          <p class="muted">Paste chapters to see a preview.</p>
-        }
+          </p>
+          @if (parsedBulkChapters().length) {
+            <div class="preview-list">
+              @for (row of parsedBulkChapters(); track row.lineNumber) {
+                <div class="preview-row" [class.invalid]="row.error">
+                  <span>#{{ row.chapterOrder }}</span>
+                  <strong>{{ row.title || 'Untitled' }}</strong>
+                  <span>{{ row.pages ? row.pages + ' pages' : 'pages not set' }}</span>
+                  @if (row.error) {
+                    <em>{{ row.error }}</em>
+                  }
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="muted">Paste chapters to see a preview.</p>
+          }
+        </div>
       </div>
 
-      <div class="modal-actions">
+      <div class="modal-actions bulk-actions">
         <button class="ghost" type="button" (click)="closeBulkChapterImport()">Cancel</button>
         <button
           class="primary"

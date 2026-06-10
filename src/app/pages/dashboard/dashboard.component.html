@@ -1,99 +1,184 @@
-@if (summary$ | async; as summary) {
-  <section class="page-header">
-    <div>
-      <p class="eyebrow">Dashboard</p>
-      <h1>Good evening</h1>
-    </div>
-  </section>
-
-  <section class="metric-grid">
-    <article class="card hero-progress">
-      <div class="metric-label">Overall Progress</div>
-      <strong>{{ summary.overallProgressPercentage }}%</strong>
-      <div class="progress">
-        <span [style.width.%]="summary.overallProgressPercentage"></span>
-      </div>
-      <small>{{ summary.completedChapters }} / {{ summary.totalChapters }} chapters</small>
-    </article>
-
-    <article class="card metric">
-      <div class="metric-label">Current Streak</div>
-      <strong>{{ summary.currentStreak }}</strong>
-      <small>days</small>
-    </article>
-
-    <article class="card metric">
-      <div class="metric-label">Completed Books</div>
-      <strong>{{ summary.completedBooksCount }}</strong>
-      <small>books finished</small>
-    </article>
-  </section>
-
-  <section class="content-grid">
-    <article class="card continue-card">
-      <div class="card-title">
-        <h2>Continue Reading</h2>
-      </div>
-      @if (summary.currentReadingChapter; as current) {
-        <div class="chapter-card">
-          <div class="book-cover">
-            @if (getCoverUrl(current); as coverUrl) {
-              <img [src]="coverUrl" [alt]="current.bookTitle || current.book || 'Book cover'">
-            } @else {
-              <span></span>
-            }
-          </div>
-          <div class="chapter-copy">
-            <p>{{ current.bookTitle || current.book }}</p>
-            <strong>{{ current.chapterTitle || current.chapter }}</strong>
-            <small>{{ current.seriesName || current.series }}</small>
-          </div>
-        </div>
-      } @else {
-        <p class="empty">No current chapter yet.</p>
-      }
-    </article>
-
-    <article class="card today-card">
-      <div class="card-title">
-        <h2>Today's Chapter</h2>
-      </div>
-      @if (summary.todayPlannedChapter; as planned) {
-        <div class="today-chapter">
-          <p>{{ planned.bookTitle || planned.book }}</p>
-          <strong>{{ planned.chapterTitle || planned.chapter }}</strong>
-          <small>{{ planned.scheduledDate | date:'MMM d, y' }}</small>
-        </div>
-      } @else {
-        <p class="empty">Nothing planned for today.</p>
-      }
-    </article>
-  </section>
-
-  <section class="card series-progress-card">
-    <div class="card-title">
-      <h2>Progress by Series</h2>
-    </div>
-    <div class="series-list">
-      @for (series of summary.progressBySeries; track getSeriesTrackId(series)) {
-        <div class="series-row">
-          <div>
-            <strong>{{ getSeriesName(series) }}</strong>
-            <small>{{ series.completedChapters }} / {{ series.totalChapters }} chapters</small>
-          </div>
-          <div class="progress">
-            <span [style.width.%]="series.progressPercentage"></span>
-          </div>
-          <strong>{{ series.progressPercentage }}%</strong>
-        </div>
-      } @empty {
-        <p class="empty">No series progress yet.</p>
-      }
-    </div>
+@if (isLoading()) {
+  <section class="empty-state">
+    <h2>Loading dashboard...</h2>
   </section>
 } @else {
-  <section class="empty-state">
-    <h1>Dashboard is waiting for the API</h1>
-    <p>Start your backend and keep it available at http://localhost:3000/api.</p>
-  </section>
+  @if (summary(); as summary) {
+    <section class="page-header">
+      <div>
+        <p class="eyebrow">Dashboard</p>
+        <h1>Good evening</h1>
+      </div>
+    </section>
+
+    @if (errorMessage()) {
+      <p class="notice">{{ errorMessage() }}</p>
+    }
+
+    <section class="top-grid">
+      <article class="card progress-card">
+        <div class="card-title compact">
+          <h2>Current Book</h2>
+          <span>{{ currentBook()?.bookTitle || 'No book selected' }}</span>
+        </div>
+        <div class="ring-layout">
+          <div class="progress-ring" [style.--progress]="getCurrentBookProgress()">
+          <strong>{{ getCurrentBookProgress() }}%</strong>
+          </div>
+          <div class="progress-facts">
+            <div>
+              <strong>{{ completedPlanChaptersCount() }} / {{ plannedChaptersCount() }}</strong>
+              <span>chapters read / planned</span>
+            </div>
+            <div>
+              <strong>{{ summary.completedBooksCount }} / {{ plannedBooksCount() }}</strong>
+              <span>books read / planned</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="card books-card">
+        <div class="card-title compact">
+          <h2>Books</h2>
+          <span>{{ plannedBooksCount() }} planned</span>
+        </div>
+        <strong class="big-number">{{ summary.completedBooksCount }}</strong>
+        <small>completed books</small>
+        <div class="books-bars" aria-hidden="true">
+          @for (series of summary.progressBySeries; track getSeriesTrackId(series)) {
+            <span [style.height.%]="getSeriesBarHeight(series)"></span>
+          }
+        </div>
+      </article>
+
+      <article class="card streak-card" [class.active]="hasReadToday()">
+        <div class="card-title compact">
+          <h2>Current Streak</h2>
+          <span class="streak-icon" aria-hidden="true"></span>
+        </div>
+        <strong class="big-number">{{ summary.currentStreak }}</strong>
+        <small>days</small>
+        <p>{{ hasReadToday() ? 'Active today' : 'Nothing read today' }}</p>
+      </article>
+    </section>
+
+    <section class="action-grid">
+      <article class="card continue-card">
+        <div class="card-title">
+          <h2>Continue Reading</h2>
+        </div>
+        @if (summary.currentReadingChapter; as current) {
+          <div class="continue-content">
+            <div class="book-cover large">
+              @if (getCoverUrl(current); as coverUrl) {
+                <img [src]="coverUrl" [alt]="getBookTitle(current) + ' cover'">
+              } @else {
+                <span></span>
+              }
+            </div>
+            <div class="continue-copy">
+              <h3>{{ getBookTitle(current) }}</h3>
+              <p>{{ getChapterTitle(current) }}</p>
+              <div class="mini-progress">
+                <div class="progress">
+                  <span [style.width.%]="getCurrentBookProgress()"></span>
+                </div>
+                <strong>{{ getCurrentBookProgress() }}%</strong>
+              </div>
+              <div class="button-row">
+                <button class="primary" type="button" (click)="goToReadingPlan()">Continue</button>
+                <button class="ghost" type="button" (click)="goToBookProgress()">View Progress</button>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <p class="empty">No current chapter yet.</p>
+        }
+      </article>
+
+      <article class="card today-card">
+        <div class="card-title">
+          <h2>Today's Chapter</h2>
+        </div>
+        @if (summary.todayPlannedChapter; as planned) {
+          <div class="today-content">
+            <div>
+              <h3>{{ getChapterTitle(planned) }}</h3>
+              <p>{{ getBookTitle(planned) }}</p>
+              <small>{{ planned.scheduledDate | date:'MMM d, y' }}</small>
+            </div>
+            <button
+              class="primary wide"
+              type="button"
+              [disabled]="isMarkingRead() || !!planned.doneDate"
+              (click)="markTodayChapterRead()"
+            >
+              {{ planned.doneDate ? 'Read' : (isMarkingRead() ? 'Marking...' : 'Mark as Read') }}
+            </button>
+          </div>
+        } @else {
+          <p class="empty">{{ isTodayPlanAlreadyDone() ? "Today's plan already done" : 'Nothing planned for today.' }}</p>
+        }
+      </article>
+    </section>
+
+    <section class="bottom-grid">
+      <article class="card plan-card">
+        <div class="card-title">
+          <h2>Reading Plan</h2>
+          <button class="ghost" type="button" (click)="goToReadingPlan()">View full plan</button>
+        </div>
+        <div class="plan-table">
+          <div class="plan-head">
+            <span>#</span>
+            <span>Date</span>
+            <span>Chapter</span>
+            <span>Status</span>
+          </div>
+          @for (item of planWindow(); track item.chapterId) {
+            <div class="plan-row">
+              <span>{{ item.chapterOrder || '-' }}</span>
+              <time>{{ getPlanDisplayDate(item) | date:'MMM d' }}</time>
+              <strong>{{ getChapterTitle(item) }}</strong>
+              <span class="status-dot" [class.done]="item.doneDate" [attr.aria-label]="getStatusLabel(item)">
+                @if (item.doneDate) {
+                  ✓
+                }
+              </span>
+            </div>
+          } @empty {
+            <p class="empty">No chapters around today.</p>
+          }
+        </div>
+      </article>
+
+      <article class="card series-card">
+        <div class="card-title">
+          <h2>Progress by Series</h2>
+        </div>
+        <div class="series-list">
+          @for (series of summary.progressBySeries; track getSeriesTrackId(series)) {
+            <div class="series-row">
+              <div>
+                <strong>{{ getSeriesName(series) }}</strong>
+                <small>{{ series.completedChapters }} / {{ series.totalChapters }} chapters</small>
+              </div>
+              <div class="progress">
+                <span [style.width.%]="series.progressPercentage"></span>
+              </div>
+              <strong>{{ series.progressPercentage }}%</strong>
+            </div>
+          } @empty {
+            <p class="empty">No series progress yet.</p>
+          }
+        </div>
+      </article>
+    </section>
+  } @else {
+    <section class="empty-state">
+      <h1>Dashboard is waiting for the API</h1>
+      <p>Check backend status and dashboard routes.</p>
+    </section>
+  }
 }
