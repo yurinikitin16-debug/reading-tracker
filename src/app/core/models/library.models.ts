@@ -35,6 +35,7 @@ export interface Chapter {
   chapterOrder: number;
   title: string;
   pages?: number | null;
+  pov?: string | null;
   scheduledDate?: string | null;
   doneDate?: string | null;
 }
@@ -57,6 +58,7 @@ export interface ReadingPlanItem {
   chapterTitle?: string;
   chapterOrder?: number;
   pages?: number | null;
+  pov?: string | null;
 }
 
 export interface CalendarDay {
@@ -106,4 +108,23 @@ export interface StatisticsSummary {
   progressBySeries: ProgressBySeries[];
   completedByMonth: CompletedByMonth[];
   completedByDay: CompletedByDay[];
+}
+
+export interface PovProgress {
+  pov: string;
+  totalChapters: number;
+  completedChapters: number;
+  unreadChapters: number;
+  progressPercentage: number;
+}
+
+export interface PovStatisticsResponse {
+  scope: 'series' | 'book';
+  seriesId: number;
+  seriesName: string;
+  bookId?: number;
+  bookTitle?: string;
+  bookOrder?: number;
+  currentActivePov: string | null;
+  progressByPov: PovProgress[];
 }

@@ -5,10 +5,19 @@ import Chart from 'chart.js/auto';
 import { catchError, of } from 'rxjs';
 
 import { StatisticsService } from '../../core/api/statistics.service';
-import { CompletedByDay, StatisticsSummary } from '../../core/models/library.models';
+import { SeriesService } from '../../core/api/series.service';
+import {
+  BookProgress,
+  CompletedByDay,
+  PovStatisticsResponse,
+  SeriesDetails,
+  SeriesProgress,
+  StatisticsSummary
+} from '../../core/models/library.models';
 
-type StatisticsTab = 'overview' | 'series' | 'month' | 'day';
+type StatisticsTab = 'overview' | 'series' | 'month' | 'day' | 'pov';
 type ChartRange = '3' | '7' | '30' | '60' | '90';
+type PovScope = 'series' | 'book';
 
 interface ChartRangeOption {
   value: ChartRange;
@@ -24,12 +33,18 @@ interface ChartRangeOption {
 })
 export class StatisticsComponent {
   private readonly statisticsService = inject(StatisticsService);
+  private readonly seriesService = inject(SeriesService);
   private readonly destroyRef = inject(DestroyRef);
   private chart: Chart<'line'> | null = null;
   private chartCanvas: ElementRef<HTMLCanvasElement> | null = null;
 
   @ViewChild('readingTrendChart')
   set readingTrendChart(canvas: ElementRef<HTMLCanvasElement> | undefined) {
+    if (!canvas) {
+      this.chart?.destroy();
+      this.chart = null;
+    }
+
     this.chartCanvas = canvas ?? null;
     this.renderChart();
   }
@@ -40,12 +55,23 @@ export class StatisticsComponent {
   readonly summary = signal<StatisticsSummary | null>(null);
   readonly isLoading = signal(false);
   readonly errorMessage = signal('');
+  readonly povScope = signal<PovScope>('series');
+  readonly series = signal<SeriesProgress[]>([]);
+  readonly selectedSeriesDetails = signal<SeriesDetails | null>(null);
+  readonly selectedSeriesId = signal(0);
+  readonly selectedBookId = signal(0);
+  readonly povStatistics = signal<PovStatisticsResponse | null>(null);
+  readonly isLoadingPov = signal(false);
+  readonly povErrorMessage = signal('');
+
+  readonly availableBooks = computed<BookProgress[]>(() => this.selectedSeriesDetails()?.books ?? []);
 
   readonly tabs: { id: StatisticsTab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'series', label: 'By Series' },
     { id: 'month', label: 'By Month' },
-    { id: 'day', label: 'By Day' }
+    { id: 'day', label: 'By Day' },
+    { id: 'pov', label: 'By POV' }
   ];
 
   readonly chartRangeOptions: ChartRangeOption[] = [
@@ -135,10 +161,59 @@ export class StatisticsComponent {
 
     this.destroyRef.onDestroy(() => this.chart?.destroy());
     this.loadStatistics();
+    this.loadSeries();
   }
 
   setTab(tab: StatisticsTab) {
     this.activeTab.set(tab);
+
+    if (tab === 'pov') {
+      this.loadPovStatistics();
+    }
+  }
+
+  setPovScope(scope: PovScope) {
+    if (this.povScope() === scope) {
+      return;
+    }
+
+    this.povScope.set(scope);
+
+    if (scope === 'book' && !this.selectedBookId()) {
+      const firstBookId = this.availableBooks()[0]?.id ?? 0;
+
+      if (!firstBookId && this.selectedSeriesId()) {
+        this.loadPovSeriesDetails(this.selectedSeriesId(), true);
+        return;
+      }
+
+      this.selectedBookId.set(firstBookId);
+    }
+
+    this.loadPovStatistics();
+  }
+
+  selectPovSeries(value: string) {
+    const seriesId = Number(value);
+
+    if (!Number.isInteger(seriesId) || seriesId < 1) {
+      return;
+    }
+
+    this.selectedSeriesId.set(seriesId);
+    this.selectedBookId.set(0);
+    this.loadPovSeriesDetails(seriesId, true);
+  }
+
+  selectPovBook(value: string) {
+    const bookId = Number(value);
+
+    if (!Number.isInteger(bookId) || bookId < 1) {
+      return;
+    }
+
+    this.selectedBookId.set(bookId);
+    this.loadPovStatistics();
   }
 
   setChartRange(value: string) {
@@ -171,6 +246,52 @@ export class StatisticsComponent {
     });
   }
 
+  loadSeries() {
+    this.seriesService
+      .getSeries()
+      .pipe(catchError(() => of([])))
+      .subscribe((series) => {
+        this.series.set(series);
+        const firstSeriesId = series[0]?.id ?? 0;
+        this.selectedSeriesId.set(firstSeriesId);
+
+        if (firstSeriesId) {
+          this.loadPovSeriesDetails(firstSeriesId, this.activeTab() === 'pov');
+        }
+      });
+  }
+
+  loadPovStatistics() {
+    const scope = this.povScope();
+    const seriesId = this.selectedSeriesId();
+    const bookId = this.selectedBookId();
+
+    if ((scope === 'series' && !seriesId) || (scope === 'book' && !bookId)) {
+      this.povStatistics.set(null);
+      return;
+    }
+
+    this.isLoadingPov.set(true);
+    this.povErrorMessage.set('');
+    this.povStatistics.set(null);
+
+    const request = scope === 'series'
+      ? this.statisticsService.getPovStatisticsBySeries(seriesId)
+      : this.statisticsService.getPovStatisticsByBook(bookId);
+
+    request
+      .pipe(
+        catchError(() => {
+          this.povErrorMessage.set('Could not load POV statistics.');
+          return of(null);
+        })
+      )
+      .subscribe((statistics) => {
+        this.povStatistics.set(statistics);
+        this.isLoadingPov.set(false);
+      });
+  }
+
   progressWidth(completed: number, total: number) {
     return total === 0 ? '0%' : `${Math.round((completed / total) * 100)}%`;
   }
@@ -180,6 +301,20 @@ export class StatisticsComponent {
       month: 'short',
       year: 'numeric'
     });
+  }
+
+  private loadPovSeriesDetails(seriesId: number, reloadStatistics: boolean) {
+    this.seriesService
+      .getSeriesDetails(seriesId)
+      .pipe(catchError(() => of(null)))
+      .subscribe((details) => {
+        this.selectedSeriesDetails.set(details);
+        this.selectedBookId.set(details?.books[0]?.id ?? 0);
+
+        if (reloadStatistics && this.activeTab() === 'pov') {
+          this.loadPovStatistics();
+        }
+      });
   }
 
   private toIsoDate(date: Date) {

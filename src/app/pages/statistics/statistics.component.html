@@ -149,6 +149,100 @@
           </div>
         </section>
       }
+
+      @case ('pov') {
+        <section class="card pov-card">
+          <div class="pov-toolbar">
+            <div class="segmented-control" aria-label="POV statistics scope">
+              <button
+                type="button"
+                [class.active]="povScope() === 'series'"
+                (click)="setPovScope('series')"
+              >
+                Entire series
+              </button>
+              <button
+                type="button"
+                [class.active]="povScope() === 'book'"
+                (click)="setPovScope('book')"
+              >
+                Book
+              </button>
+            </div>
+
+            <div class="pov-filters">
+              <label>
+                <span>Series</span>
+                <select [value]="selectedSeriesId()" (change)="selectPovSeries($any($event.target).value)">
+                  @for (item of series(); track item.id) {
+                    <option [value]="item.id">{{ item.name }}</option>
+                  }
+                </select>
+              </label>
+
+              @if (povScope() === 'book') {
+                <label>
+                  <span>Book</span>
+                  <select [value]="selectedBookId()" (change)="selectPovBook($any($event.target).value)">
+                    @for (book of availableBooks(); track book.id) {
+                      <option [value]="book.id">{{ book.bookOrder }}. {{ book.title }}</option>
+                    }
+                  </select>
+                </label>
+              }
+            </div>
+          </div>
+
+          @if (povErrorMessage()) {
+            <p class="notice pov-notice">{{ povErrorMessage() }}</p>
+          }
+
+          @if (isLoadingPov()) {
+            <div class="pov-state">Loading POV statistics...</div>
+          } @else {
+            @if (povStatistics(); as povStats) {
+              <div class="pov-heading">
+                <div>
+                  <p class="eyebrow">{{ povStats.scope === 'book' ? 'Book POV' : 'Series POV' }}</p>
+                  <h2>{{ povStats.bookTitle || povStats.seriesName }}</h2>
+                </div>
+                <div class="active-pov">
+                  <span>Current active POV</span>
+                  <strong>{{ povStats.currentActivePov || 'All caught up' }}</strong>
+                </div>
+              </div>
+
+              <div class="pov-table">
+                <div class="pov-table-head">
+                  <span>POV</span>
+                  <span>Total</span>
+                  <span>Read</span>
+                  <span>Unread</span>
+                  <span>Coverage</span>
+                </div>
+                @for (pov of povStats.progressByPov; track pov.pov) {
+                  <div class="pov-row" [class.active]="pov.pov === povStats.currentActivePov">
+                    <strong>{{ pov.pov }}</strong>
+                    <span>{{ pov.totalChapters }}</span>
+                    <span>{{ pov.completedChapters }}</span>
+                    <span>{{ pov.unreadChapters }}</span>
+                    <div class="pov-coverage">
+                      <div class="progress">
+                        <span [style.width.%]="pov.progressPercentage"></span>
+                      </div>
+                      <strong>{{ pov.progressPercentage }}%</strong>
+                    </div>
+                  </div>
+                } @empty {
+                  <div class="pov-state">No POV chapters in this scope.</div>
+                }
+              </div>
+            } @else {
+              <div class="pov-state">Select a series or book to view POV statistics.</div>
+            }
+          }
+        </section>
+      }
     }
 
     <section class="card average-card">

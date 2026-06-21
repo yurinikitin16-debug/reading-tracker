@@ -281,7 +281,7 @@ textarea {
 
 .preview-row {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) 110px;
+  grid-template-columns: 56px minmax(0, 1fr) 110px 110px;
   gap: 10px;
   align-items: center;
   min-height: 42px;
@@ -294,11 +294,12 @@ textarea {
 }
 
 .preview-row.invalid {
-  grid-template-columns: 56px minmax(0, 1fr) 110px minmax(160px, 1fr);
+  grid-template-columns: 56px minmax(0, 1fr) 110px 110px;
   background: rgba(251, 113, 133, 0.08);
 }
 
 .preview-row em {
+  grid-column: 1 / -1;
   color: #fecdd3;
   font-style: normal;
 }

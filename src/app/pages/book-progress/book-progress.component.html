@@ -118,7 +118,7 @@
                     @if (chapter.pages) {
                       {{ chapter.pages }} pages
                     } @else {
-                      pages not set
+
                     }
                   </span>
                 </div>
@@ -210,6 +210,10 @@
             <input formControlName="pages" type="number" min="1" />
           </label>
         </div>
+        <label>
+          <span>POV character</span>
+          <input formControlName="pov" placeholder="Tyrion" />
+        </label>
         <div class="modal-actions">
           <button class="ghost" type="button" (click)="closeChapterEditor()">Cancel</button>
           <button class="primary" type="submit">{{ chapterModalMode() === 'edit' ? 'Save' : 'Add Chapter' }}</button>
@@ -232,14 +236,14 @@
           <span>Chapter list</span>
           <textarea
             rows="10"
-            placeholder="1. Prologue | 12&#10;2. Bran I | 18&#10;3. Catelyn I"
+            placeholder="1. Prologue | 12 | Prologue&#10;2. Bran I | 18 | Bran&#10;3. Catelyn I | | Catelyn"
             [value]="bulkChapterText()"
             (input)="bulkChapterText.set($any($event.target).value)"
           ></textarea>
         </label>
 
         <div class="format-note">
-          Format: <strong>chapterOrder. title | pages</strong>. Pages are optional. If order is missing, it is assigned automatically.
+          Format: <strong>chapterOrder. title | pages | POV</strong>. Pages and POV are optional. If order is missing, it is assigned automatically.
         </div>
 
         <div class="bulk-preview">
@@ -257,6 +261,7 @@
                   <span>#{{ row.chapterOrder }}</span>
                   <strong>{{ row.title || 'Untitled' }}</strong>
                   <span>{{ row.pages ? row.pages + ' pages' : 'pages not set' }}</span>
+                  <span>{{ row.pov || 'POV not set' }}</span>
                   @if (row.error) {
                     <em>{{ row.error }}</em>
                   }

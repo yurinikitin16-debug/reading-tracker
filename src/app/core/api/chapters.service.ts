@@ -8,6 +8,7 @@ export interface ChapterInput {
   title: string;
   chapterOrder: number;
   pages?: number | null;
+  pov?: string | null;
 }
 
 export interface BulkChaptersInput {

@@ -16,6 +16,7 @@ interface ParsedChapterImportRow {
   chapterOrder: number;
   title: string;
   pages: number | null;
+  pov: string | null;
   error: string;
 }
 
@@ -67,7 +68,8 @@ export class BookProgressComponent {
   readonly chapterForm = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.maxLength(255)]],
     chapterOrder: [1, [Validators.required, Validators.min(1)]],
-    pages: [null as number | null]
+    pages: [null as number | null],
+    pov: ['']
   });
 
   readonly filteredBooks = computed(() => {
@@ -96,7 +98,8 @@ export class BookProgressComponent {
       .map((row) => ({
         chapterOrder: row.chapterOrder,
         title: row.title,
-        pages: row.pages
+        pages: row.pages,
+        pov: row.pov
       }))
   );
 
@@ -324,7 +327,8 @@ export class BookProgressComponent {
     this.chapterForm.reset({
       title: '',
       chapterOrder: this.chapters().length + 1,
-      pages: null
+      pages: null,
+      pov: ''
     });
     this.isChapterEditorOpen.set(true);
     this.chapterMenuOpenId.set(null);
@@ -353,7 +357,8 @@ export class BookProgressComponent {
     this.chapterForm.reset({
       title: chapter.title,
       chapterOrder: chapter.chapterOrder,
-      pages: chapter.pages ?? null
+      pages: chapter.pages ?? null,
+      pov: chapter.pov ?? ''
     });
     this.isChapterEditorOpen.set(true);
     this.chapterMenuOpenId.set(null);
@@ -376,7 +381,8 @@ export class BookProgressComponent {
     const payload: ChapterInput = {
       title: value.title,
       chapterOrder: value.chapterOrder,
-      pages: value.pages
+      pages: value.pages,
+      pov: value.pov.trim() || null
     };
     const active = this.activeChapter();
 
@@ -454,9 +460,10 @@ export class BookProgressComponent {
       .map((line, index) => ({ line: line.trim(), lineNumber: index + 1 }))
       .filter(({ line }) => line.length > 0)
       .map(({ line, lineNumber }) => {
-        const [leftRaw, ...pagesParts] = line.split('|');
+        const [leftRaw, pagesPart = '', povPart = '', ...extraParts] = line.split('|');
         const left = leftRaw.trim();
-        const pagesRaw = pagesParts.join('|').trim();
+        const pagesRaw = pagesPart.trim();
+        const pov = povPart.trim() || null;
         const numberedMatch = left.match(/^(\d+)(?:[.)]|\s+-\s+|\s+)(.+)$/);
         const hasExplicitOrder = Boolean(numberedMatch);
         const chapterOrder = numberedMatch ? Number(numberedMatch[1]) : nextOrder;
@@ -470,6 +477,8 @@ export class BookProgressComponent {
           error = 'Chapter order must be a positive number.';
         } else if (usedOrders.has(chapterOrder)) {
           error = `Duplicate chapter order ${chapterOrder}.`;
+        } else if (extraParts.length > 0) {
+          error = 'Too many fields. Use title | pages | POV.';
         }
 
         if (!error && pagesRaw) {
@@ -490,6 +499,7 @@ export class BookProgressComponent {
           chapterOrder,
           title,
           pages,
+          pov,
           error
         };
       });
