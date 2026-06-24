@@ -5,9 +5,11 @@ import Chart from 'chart.js/auto';
 import { catchError, of } from 'rxjs';
 
 import { StatisticsService } from '../../core/api/statistics.service';
+import { BooksService } from '../../core/api/books.service';
 import { SeriesService } from '../../core/api/series.service';
 import {
   BookProgress,
+  CompletedBookHistoryItem,
   CompletedByDay,
   PovStatisticsResponse,
   SeriesDetails,
@@ -15,7 +17,7 @@ import {
   StatisticsSummary
 } from '../../core/models/library.models';
 
-type StatisticsTab = 'overview' | 'series' | 'month' | 'day' | 'pov';
+type StatisticsTab = 'overview' | 'series' | 'month' | 'day' | 'pov' | 'books';
 type ChartRange = '3' | '7' | '30' | '60' | '90';
 type PovScope = 'series' | 'book';
 
@@ -33,6 +35,7 @@ interface ChartRangeOption {
 })
 export class StatisticsComponent {
   private readonly statisticsService = inject(StatisticsService);
+  private readonly booksService = inject(BooksService);
   private readonly seriesService = inject(SeriesService);
   private readonly destroyRef = inject(DestroyRef);
   private chart: Chart<'line'> | null = null;
@@ -63,6 +66,9 @@ export class StatisticsComponent {
   readonly povStatistics = signal<PovStatisticsResponse | null>(null);
   readonly isLoadingPov = signal(false);
   readonly povErrorMessage = signal('');
+  readonly completionHistory = signal<CompletedBookHistoryItem[]>([]);
+  readonly isLoadingHistory = signal(false);
+  readonly hasLoadedHistory = signal(false);
 
   readonly availableBooks = computed<BookProgress[]>(() => this.selectedSeriesDetails()?.books ?? []);
 
@@ -71,7 +77,8 @@ export class StatisticsComponent {
     { id: 'series', label: 'By Series' },
     { id: 'month', label: 'By Month' },
     { id: 'day', label: 'By Day' },
-    { id: 'pov', label: 'By POV' }
+    { id: 'pov', label: 'By POV' },
+    { id: 'books', label: 'Completed Books' }
   ];
 
   readonly chartRangeOptions: ChartRangeOption[] = [
@@ -169,6 +176,10 @@ export class StatisticsComponent {
 
     if (tab === 'pov') {
       this.loadPovStatistics();
+    }
+
+    if (tab === 'books' && !this.hasLoadedHistory()) {
+      this.loadCompletionHistory();
     }
   }
 
@@ -290,6 +301,25 @@ export class StatisticsComponent {
         this.povStatistics.set(statistics);
         this.isLoadingPov.set(false);
       });
+  }
+
+  loadCompletionHistory() {
+    this.isLoadingHistory.set(true);
+
+    this.booksService
+      .getCompletionHistory()
+      .pipe(catchError(() => of([])))
+      .subscribe((history) => {
+        this.completionHistory.set(history);
+        this.hasLoadedHistory.set(true);
+        this.isLoadingHistory.set(false);
+      });
+  }
+
+  getHistoryScheduleLabel(book: CompletedBookHistoryItem) {
+    if (book.scheduleDifferenceDays === null || book.scheduleStatus === null) return 'No plan comparison';
+    if (book.scheduleStatus === 'on_time') return 'On schedule';
+    return `${Math.abs(book.scheduleDifferenceDays)} days ${book.scheduleStatus}`;
   }
 
   progressWidth(completed: number, total: number) {

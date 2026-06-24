@@ -12,6 +12,18 @@
     <p class="notice">{{ errorMessage() }}</p>
   }
 
+  @if (forecast(); as planForecast) {
+    <section class="plan-health" [attr.data-status]="planForecast.planHealth.status">
+      <div>
+        <span>Plan health</span>
+        <strong>{{ getPlanHealthLabel() }}</strong>
+      </div>
+      @if (planForecast.planHealth.oldestMissedDate) {
+        <small>Oldest missed: {{ planForecast.planHealth.oldestMissedDate | date:'MMM d, y' }}</small>
+      }
+    </section>
+  }
+
   @if (isLoadingPlan()) {
     <section class="empty-state">
       <h2>Loading plan...</h2>
@@ -37,6 +49,21 @@
               </span>
               @if (group.completedChapters === group.totalChapters) {
                 <em>Completed</em>
+              }
+              @if (group.forecast; as bookForecast) {
+                <div class="forecast-meta">
+                  @if (bookForecast.expectedStartDate && bookForecast.expectedFinishDate) {
+                    <span>
+                      Forecast {{ bookForecast.expectedStartDate | date:'MMM d' }} - {{ bookForecast.expectedFinishDate | date:'MMM d, y' }}
+                    </span>
+                  }
+                  <span>{{ getPaceSourceLabel(bookForecast.pace.source) }}</span>
+                  @if (getForecastDifferenceLabel(bookForecast)) {
+                    <span [class.ahead]="bookForecast.scheduleStatus === 'ahead'" [class.behind]="bookForecast.scheduleStatus === 'behind'">
+                      {{ getForecastDifferenceLabel(bookForecast) }}
+                    </span>
+                  }
+                </div>
               }
             </div>
 

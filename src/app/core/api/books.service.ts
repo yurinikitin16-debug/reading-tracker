@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
 import { API_BASE_URL } from './api.config';
-import { BookProgress } from '../models/library.models';
+import { BookProgress, BookReadingInsights, CompletedBookHistoryItem } from '../models/library.models';
 
 export interface BookInput {
   title: string;
@@ -27,5 +27,13 @@ export class BooksService {
 
   deleteBook(id: number) {
     return this.http.delete<void>(`${this.apiBaseUrl}/books/${id}`);
+  }
+
+  getReadingInsights(bookId: number) {
+    return this.http.get<BookReadingInsights>(`${this.apiBaseUrl}/books/${bookId}/reading-insights`);
+  }
+
+  getCompletionHistory() {
+    return this.http.get<CompletedBookHistoryItem[]>(`${this.apiBaseUrl}/books/completion-history`);
   }
 }

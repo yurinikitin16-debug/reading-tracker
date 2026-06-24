@@ -97,14 +97,22 @@
       <div class="detail-list">
         @for (item of selectedScheduled(); track item.chapterId) {
           <article class="detail-item" [class.done]="item.doneDate" [class.already-done-item]="getScheduledStatus(item) === 'Already done'">
-            <div>
+            <div class="detail-copy">
               <strong>{{ getItemChapter(item) }}</strong>
               <small>{{ getItemBook(item) }}</small>
               @if (getItemSeries(item)) {
                 <small>{{ getItemSeries(item) }}</small>
               }
             </div>
-            <span>{{ getScheduledStatus(item) }}</span>
+            <div class="detail-actions">
+              <span>{{ getScheduledStatus(item) }}</span>
+              @if (!item.doneDate) {
+                <button class="primary" type="button" (click)="markItemRead(item)">Mark read</button>
+              }
+              <button class="ghost" type="button" (click)="openReschedule(item)">Reschedule</button>
+              <button class="ghost" type="button" (click)="openBook(item)">Open book</button>
+              <button class="ghost" type="button" (click)="openReadingPlan()">Plan</button>
+            </div>
           </article>
         } @empty {
           <p class="empty">Nothing planned.</p>
@@ -121,14 +129,18 @@
       <div class="detail-list">
         @for (item of selectedCompleted(); track item.chapterId) {
           <article class="detail-item completed-item">
-            <div>
+            <div class="detail-copy">
               <strong>{{ getItemChapter(item) }}</strong>
               <small>{{ getItemBook(item) }}</small>
               @if (item.scheduledDate) {
                 <small>Planned {{ item.scheduledDate | date: 'MMM d' }}</small>
               }
             </div>
-            <span>Read</span>
+            <div class="detail-actions">
+              <span>Read</span>
+              <button class="ghost" type="button" (click)="openBook(item)">Open book</button>
+              <button class="ghost" type="button" (click)="openReadingPlan()">Plan</button>
+            </div>
           </article>
         } @empty {
           <p class="empty">No completed chapters.</p>
@@ -137,3 +149,28 @@
     </section>
   </aside>
 </section>
+
+@if (rescheduleItem(); as item) {
+  <div class="modal-backdrop" role="presentation" (click)="closeReschedule()">
+    <section class="modal reschedule-modal" role="dialog" aria-modal="true" aria-labelledby="reschedule-title" (click)="$event.stopPropagation()">
+      <header class="modal-header">
+        <h2 id="reschedule-title">Reschedule Chapter</h2>
+        <button class="icon-button" type="button" aria-label="Close modal" (click)="closeReschedule()">x</button>
+      </header>
+      <div class="reschedule-summary">
+        <strong>{{ getItemChapter(item) }}</strong>
+        <span>{{ getItemBook(item) }}</span>
+      </div>
+      <label>
+        <span>Scheduled date</span>
+        <input type="date" [value]="rescheduleDate()" (input)="rescheduleDate.set($any($event.target).value)" autofocus />
+      </label>
+      <div class="modal-actions">
+        <button class="ghost" type="button" (click)="closeReschedule()">Cancel</button>
+        <button class="primary" type="button" [disabled]="!rescheduleDate() || isSavingAction()" (click)="saveReschedule()">
+          {{ isSavingAction() ? 'Saving...' : 'Reschedule' }}
+        </button>
+      </div>
+    </section>
+  </div>
+}

@@ -8,6 +8,12 @@
       <div>
         <p class="eyebrow">Dashboard</p>
         <h1>Good evening</h1>
+        <p class="dashboard-context">
+          {{ dashboardContext() }}
+          @if (summary.currentStreak) {
+            <span>· {{ summary.currentStreak }}-day streak</span>
+          }
+        </p>
       </div>
     </section>
 
@@ -34,6 +40,18 @@
               <strong>{{ summary.completedBooksCount }} / {{ plannedBooksCount() }}</strong>
               <span>Books Read / Planned</span>
             </div>
+            @if (currentBookInsights(); as insights) {
+              <div>
+                <strong>
+                  @if (insights.status === 'completed') {
+                    {{ insights.completion.actualEndDate | date:'MMM d' }}
+                  } @else {
+                    {{ insights.pace.expectedFinishDate ? (insights.pace.expectedFinishDate | date:'MMM d') : '-' }}
+                  }
+                </strong>
+                <span>{{ getForecastStatusLabel(insights) }}</span>
+              </div>
+            }
           </div>
         </div>
       </article>

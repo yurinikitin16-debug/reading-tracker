@@ -4,12 +4,21 @@ import { Router } from '@angular/router';
 import { catchError, forkJoin, of } from 'rxjs';
 
 import { DashboardService } from '../../core/api/dashboard.service';
+import { BooksService } from '../../core/api/books.service';
 import { ReadingProgressService } from '../../core/api/reading-progress.service';
-import { DashboardSummary, ProgressBySeries, ReadingPlanItem, SeriesProgress } from '../../core/models/library.models';
+import {
+  BookReadingInsights,
+  DashboardSummary,
+  ProgressBySeries,
+  ReadingPlanForecastResponse,
+  ReadingPlanItem,
+  SeriesProgress
+} from '../../core/models/library.models';
 
 interface DashboardData {
   summary: DashboardSummary;
   plan: ReadingPlanItem[];
+  forecast: ReadingPlanForecastResponse | null;
 }
 
 interface BookPlanGroup {
@@ -28,6 +37,7 @@ interface BookPlanGroup {
 })
 export class DashboardComponent {
   private readonly dashboardService = inject(DashboardService);
+  private readonly booksService = inject(BooksService);
   private readonly progressService = inject(ReadingProgressService);
   private readonly router = inject(Router);
 
@@ -35,10 +45,12 @@ export class DashboardComponent {
   readonly isLoading = signal(false);
   readonly errorMessage = signal('');
   readonly isMarkingRead = signal(false);
+  readonly currentBookInsights = signal<BookReadingInsights | null>(null);
   readonly todayIso = this.toIsoDate(new Date());
 
   readonly summary = computed(() => this.data()?.summary ?? null);
   readonly plan = computed(() => this.data()?.plan ?? []);
+  readonly forecast = computed(() => this.data()?.forecast ?? null);
   readonly currentBook = computed(() => this.getCurrentBookGroup());
   readonly planWindow = computed(() => this.getPlanWindow());
   readonly hasReadToday = computed(() => this.plan().some((item) => item.doneDate === this.todayIso));
@@ -50,6 +62,7 @@ export class DashboardComponent {
   readonly plannedBooksCount = computed(() => new Set(this.plan().map((item) => this.getBookKey(item))).size);
   readonly plannedChaptersCount = computed(() => this.plan().length);
   readonly completedPlanChaptersCount = computed(() => this.plan().filter((item) => item.doneDate).length);
+  readonly dashboardContext = computed(() => this.getDashboardContext());
 
   constructor() {
     this.loadDashboard();
@@ -61,7 +74,8 @@ export class DashboardComponent {
 
     forkJoin({
       summary: this.dashboardService.getSummary(),
-      plan: this.progressService.getReadingPlan().pipe(catchError(() => of([])))
+      plan: this.progressService.getReadingPlan().pipe(catchError(() => of([]))),
+      forecast: this.progressService.getPlanForecast().pipe(catchError(() => of(null)))
     })
       .pipe(
         catchError(() => {
@@ -72,9 +86,11 @@ export class DashboardComponent {
       .subscribe((data) => {
         this.data.set(data ? {
           summary: this.enrichSummaryWithCovers(data.summary, data.plan),
-          plan: data.plan
+          plan: data.plan,
+          forecast: data.forecast
         } : null);
         this.isLoading.set(false);
+        this.loadCurrentBookInsights();
       });
   }
 
@@ -148,6 +164,49 @@ export class DashboardComponent {
     return item.scheduledDate || item.doneDate || '';
   }
 
+  private getDashboardContext() {
+    const health = this.forecast()?.planHealth;
+
+    if (!health) {
+      return 'Your reading overview';
+    }
+
+    switch (health.status) {
+      case 'today_done':
+        return "Today's plan already done";
+      case 'today_planned': {
+        const remaining = health.plannedTodayChapters - health.completedPlannedTodayChapters;
+        return `${remaining} ${remaining === 1 ? 'chapter' : 'chapters'} planned today`;
+      }
+      case 'behind':
+        return `${health.missedChapters} ${health.missedChapters === 1 ? 'chapter' : 'chapters'} behind`;
+      case 'ahead':
+        return `You are ${Math.abs(health.scheduleDifferenceDays ?? 0)} days ahead`;
+      case 'on_track':
+        return 'Your reading plan is on track';
+      default:
+        return 'No reading plan yet';
+    }
+  }
+
+  getForecastStatusLabel(insights: BookReadingInsights) {
+    if (insights.status === 'completed') {
+      return 'Book completed';
+    }
+
+    const difference = insights.pace.scheduleDifferenceDays;
+
+    if (difference === null || insights.pace.scheduleStatus === null) {
+      return 'No schedule comparison';
+    }
+
+    if (insights.pace.scheduleStatus === 'on_time') {
+      return 'On schedule';
+    }
+
+    return `${Math.abs(difference)} days ${insights.pace.scheduleStatus}`;
+  }
+
   private getCurrentBookGroup(): BookPlanGroup | null {
     const current = this.summary()?.currentReadingChapter ?? this.summary()?.todayPlannedChapter;
 
@@ -175,6 +234,20 @@ export class DashboardComponent {
       totalChapters: items.length,
       completedChapters: items.filter((item) => item.doneDate).length
     };
+  }
+
+  private loadCurrentBookInsights() {
+    const bookId = this.summary()?.currentReadingChapter?.bookId ?? this.summary()?.todayPlannedChapter?.bookId;
+    this.currentBookInsights.set(null);
+
+    if (!bookId) {
+      return;
+    }
+
+    this.booksService
+      .getReadingInsights(bookId)
+      .pipe(catchError(() => of(null)))
+      .subscribe((insights) => this.currentBookInsights.set(insights));
   }
 
   private getPlanWindow() {

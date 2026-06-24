@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { Component, HostListener, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -6,7 +7,7 @@ import { catchError, of } from 'rxjs';
 import { BookInput, BooksService } from '../../core/api/books.service';
 import { ChapterInput, ChaptersService } from '../../core/api/chapters.service';
 import { SeriesService } from '../../core/api/series.service';
-import { BookProgress, Chapter, SeriesDetails, SeriesProgress } from '../../core/models/library.models';
+import { BookProgress, BookReadingInsights, Chapter, SeriesDetails, SeriesProgress } from '../../core/models/library.models';
 
 type BookModalMode = 'create' | 'edit';
 type ChapterModalMode = 'create' | 'edit';
@@ -22,7 +23,7 @@ interface ParsedChapterImportRow {
 
 @Component({
   selector: 'app-book-progress',
-  imports: [ReactiveFormsModule],
+  imports: [DatePipe, ReactiveFormsModule],
   templateUrl: './book-progress.component.html',
   styleUrl: './book-progress.component.scss'
 })
@@ -37,10 +38,12 @@ export class BookProgressComponent {
   readonly selectedSeries = signal<SeriesDetails | null>(null);
   readonly selectedBook = signal<BookProgress | null>(null);
   readonly chapters = signal<Chapter[]>([]);
+  readonly readingInsights = signal<BookReadingInsights | null>(null);
   readonly searchTerm = signal('');
   readonly isLoadingSeries = signal(false);
   readonly isLoadingBooks = signal(false);
   readonly isLoadingChapters = signal(false);
+  readonly isLoadingInsights = signal(false);
   readonly errorMessage = signal('');
   readonly bookMenuOpenId = signal<number | null>(null);
   readonly chapterMenuOpenId = signal<number | null>(null);
@@ -158,9 +161,10 @@ export class BookProgressComponent {
         this.selectedSeries.set(details);
         this.isLoadingBooks.set(false);
 
-        const firstBook = details?.books[0] ?? null;
-        if (firstBook) {
-          this.selectBook(firstBook);
+        const routeBookId = Number(this.route.snapshot.queryParamMap.get('book'));
+        const preferredBook = details?.books.find((book) => book.id === routeBookId) ?? details?.books[0] ?? null;
+        if (preferredBook) {
+          this.selectBook(preferredBook);
         }
       });
   }
@@ -176,7 +180,9 @@ export class BookProgressComponent {
   selectBook(book: BookProgress) {
     this.selectedBook.set(book);
     this.isLoadingChapters.set(true);
+    this.isLoadingInsights.set(true);
     this.chapters.set([]);
+    this.readingInsights.set(null);
 
     this.chaptersService
       .getChaptersByBook(book.id)
@@ -190,6 +196,32 @@ export class BookProgressComponent {
         this.chapters.set(chapters);
         this.isLoadingChapters.set(false);
       });
+
+    this.booksService
+      .getReadingInsights(book.id)
+      .pipe(catchError(() => of(null)))
+      .subscribe((insights) => {
+        this.readingInsights.set(insights);
+        this.isLoadingInsights.set(false);
+      });
+  }
+
+  getScheduleDifferenceLabel(insights: BookReadingInsights) {
+    const difference = insights.pace.scheduleDifferenceDays;
+
+    if (difference === null || insights.pace.scheduleStatus === null) {
+      return 'No schedule comparison';
+    }
+
+    if (insights.pace.scheduleStatus === 'on_time') {
+      return 'On schedule';
+    }
+
+    return `${Math.abs(difference)} days ${insights.pace.scheduleStatus}`;
+  }
+
+  getPaceWindowLabel(insights: BookReadingInsights) {
+    return insights.pace.paceWindow === 'last_30_days' ? 'Last 30 days' : 'All time';
   }
 
   refreshSelectedSeries(preferredBookId?: number) {

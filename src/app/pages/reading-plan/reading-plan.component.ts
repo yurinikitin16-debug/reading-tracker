@@ -1,12 +1,20 @@
 import { DatePipe } from '@angular/common';
 import { Component, ElementRef, ViewChild, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { catchError, of } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 
 import { ChaptersService } from '../../core/api/chapters.service';
 import { ReadingProgressService } from '../../core/api/reading-progress.service';
 import { SeriesService } from '../../core/api/series.service';
-import { BookProgress, Chapter, ReadingPlanItem, SeriesDetails, SeriesProgress } from '../../core/models/library.models';
+import {
+  BookForecast,
+  BookProgress,
+  Chapter,
+  ReadingPlanForecastResponse,
+  ReadingPlanItem,
+  SeriesDetails,
+  SeriesProgress
+} from '../../core/models/library.models';
 
 interface PlanBookGroup {
   key: string;
@@ -18,6 +26,7 @@ interface PlanBookGroup {
   endDate: string | null;
   totalChapters: number;
   completedChapters: number;
+  forecast: BookForecast | null;
   items: ReadingPlanItem[];
 }
 
@@ -43,6 +52,7 @@ export class ReadingPlanComponent {
   private readonly seriesService = inject(SeriesService);
 
   readonly plan = signal<ReadingPlanItem[]>([]);
+  readonly forecast = signal<ReadingPlanForecastResponse | null>(null);
   readonly series = signal<SeriesProgress[]>([]);
   readonly selectedSeriesDetails = signal<SeriesDetails | null>(null);
   readonly selectedBookChapters = signal<Chapter[]>([]);
@@ -103,15 +113,16 @@ export class ReadingPlanComponent {
     this.isLoadingPlan.set(true);
     this.errorMessage.set('');
 
-    this.progressService
-      .getReadingPlan()
-      .pipe(
+    forkJoin({
+      items: this.progressService.getReadingPlan().pipe(
         catchError(() => {
           this.errorMessage.set('Could not load reading plan.');
           return of([]);
         })
-      )
-      .subscribe((items) => {
+      ),
+      forecast: this.progressService.getPlanForecast().pipe(catchError(() => of(null)))
+    }).subscribe(({ items, forecast }) => {
+        this.forecast.set(forecast);
         this.plan.set(items);
         this.resetCollapsedGroups(items);
         this.isLoadingPlan.set(false);
@@ -300,8 +311,41 @@ export class ReadingPlanComponent {
     });
   }
 
+  getPlanHealthLabel() {
+    const health = this.forecast()?.planHealth;
+
+    if (!health) return 'Forecast unavailable';
+    if (health.status === 'today_done') return "Today's plan already done";
+    if (health.status === 'today_planned') {
+      const remaining = health.plannedTodayChapters - health.completedPlannedTodayChapters;
+      return `${remaining} ${remaining === 1 ? 'chapter' : 'chapters'} planned today`;
+    }
+    if (health.status === 'behind') return `${health.missedChapters} chapters behind`;
+    if (health.status === 'ahead') return `${Math.abs(health.scheduleDifferenceDays ?? 0)} days ahead`;
+    if (health.status === 'on_track') return 'On track';
+    return 'No reading plan yet';
+  }
+
+  getForecastDifferenceLabel(forecast: BookForecast) {
+    const difference = forecast.scheduleDifferenceDays;
+
+    if (difference === null || forecast.scheduleStatus === null) return '';
+    if (forecast.scheduleStatus === 'on_time') return 'On schedule';
+    return `${Math.abs(difference)} days ${forecast.scheduleStatus}`;
+  }
+
+  getPaceSourceLabel(source: BookForecast['pace']['source']) {
+    return ({
+      book_history: 'Book pace',
+      series_history: 'Series history',
+      global_history: 'Recent reading pace',
+      planned: 'Plan estimate'
+    })[source];
+  }
+
   private groupPlan(items: ReadingPlanItem[]): PlanBookGroup[] {
     const groups = new Map<string, ReadingPlanItem[]>();
+    const forecasts = new Map((this.forecast()?.books ?? []).map((book) => [String(book.bookId), book]));
 
     items
       .slice()
@@ -335,6 +379,7 @@ export class ReadingPlanComponent {
           endDate: groupItems[groupItems.length - 1]?.scheduledDate ?? null,
           totalChapters: groupItems.length,
           completedChapters,
+          forecast: forecasts.get(String(first.bookId)) ?? null,
           items: displayItems
         };
       })

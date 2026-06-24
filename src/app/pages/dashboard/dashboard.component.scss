@@ -7,6 +7,15 @@
   color: #fecdd3;
 }
 
+.dashboard-context {
+  margin: 10px 0 0;
+  color: var(--muted);
+}
+
+.dashboard-context span {
+  color: var(--accent-soft);
+}
+
 .top-grid,
 .action-grid,
 .bottom-grid {

@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
 import { ReadingProgressService } from '../../core/api/reading-progress.service';
@@ -26,6 +27,7 @@ interface CalendarCell {
 })
 export class CalendarComponent {
   private readonly progressService = inject(ReadingProgressService);
+  private readonly router = inject(Router);
   private readonly todayIso = this.toIsoDate(new Date());
 
   readonly weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -34,6 +36,9 @@ export class CalendarComponent {
   readonly selectedDate = signal(this.todayIso);
   readonly isLoading = signal(false);
   readonly errorMessage = signal('');
+  readonly rescheduleItem = signal<ReadingPlanItem | null>(null);
+  readonly rescheduleDate = signal('');
+  readonly isSavingAction = signal(false);
 
   readonly monthLabel = computed(() => this.currentMonth());
   readonly calendarByDate = computed(() => new Map(this.calendarDays().map((day) => [day.date, day])));
@@ -126,6 +131,64 @@ export class CalendarComponent {
     }
 
     return item.doneDate ? 'Read' : 'Planned';
+  }
+
+  markItemRead(item: ReadingPlanItem) {
+    if (item.doneDate || this.isSavingAction()) return;
+
+    this.isSavingAction.set(true);
+    this.progressService.markChapterRead(item.chapterId, this.todayIso).subscribe({
+      next: () => {
+        this.isSavingAction.set(false);
+        this.loadCalendar();
+      },
+      error: () => {
+        this.isSavingAction.set(false);
+        this.errorMessage.set('Could not mark chapter as read.');
+      }
+    });
+  }
+
+  openReschedule(item: ReadingPlanItem) {
+    this.rescheduleItem.set(item);
+    this.rescheduleDate.set(item.scheduledDate || this.selectedDate());
+  }
+
+  closeReschedule() {
+    this.rescheduleItem.set(null);
+    this.rescheduleDate.set('');
+  }
+
+  saveReschedule() {
+    const item = this.rescheduleItem();
+    const date = this.rescheduleDate();
+
+    if (!item || !date || this.isSavingAction()) return;
+
+    this.isSavingAction.set(true);
+    this.progressService.scheduleChapter(item.chapterId, date).subscribe({
+      next: () => {
+        this.isSavingAction.set(false);
+        this.closeReschedule();
+        this.selectedDate.set(date);
+        this.currentMonth.set(this.startOfMonth(new Date(`${date}T00:00:00`)));
+        this.loadCalendar();
+      },
+      error: () => {
+        this.isSavingAction.set(false);
+        this.errorMessage.set('Could not reschedule chapter.');
+      }
+    });
+  }
+
+  openBook(item: ReadingPlanItem) {
+    this.router.navigate(['/book-progress'], {
+      queryParams: { series: item.seriesId, book: item.bookId }
+    });
+  }
+
+  openReadingPlan() {
+    this.router.navigate(['/reading-plan']);
   }
 
   private shiftMonth(offset: number) {

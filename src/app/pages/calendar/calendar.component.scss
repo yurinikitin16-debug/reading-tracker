@@ -228,9 +228,7 @@ i {
 }
 
 .detail-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
   gap: 14px;
   padding: 12px;
   border: 1px solid var(--border);
@@ -249,7 +247,7 @@ i {
   background: rgba(56, 189, 248, 0.08);
 }
 
-.detail-item div {
+.detail-copy {
   display: grid;
   gap: 5px;
   min-width: 0;
@@ -266,11 +264,48 @@ i {
   color: var(--muted);
 }
 
-.detail-item > span {
+.detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.detail-actions > span {
   min-width: max-content;
+  margin-right: auto;
   color: var(--accent-soft);
   font-size: 0.82rem;
   font-weight: 800;
+}
+
+.detail-actions button {
+  min-height: 30px;
+  padding: 0 9px;
+  font-size: 0.78rem;
+}
+
+.reschedule-modal {
+  width: min(100%, 440px);
+}
+
+.reschedule-modal label,
+.reschedule-summary {
+  display: grid;
+  gap: 7px;
+}
+
+.reschedule-summary {
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.reschedule-summary span,
+.reschedule-modal label > span {
+  color: var(--muted);
 }
 
 .error-message {

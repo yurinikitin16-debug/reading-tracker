@@ -11,6 +11,37 @@
   color: #fecdd3;
 }
 
+.plan-health {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.plan-health div {
+  display: grid;
+  gap: 4px;
+}
+
+.plan-health span,
+.plan-health small {
+  color: var(--muted);
+}
+
+.plan-health[data-status="behind"] {
+  border-color: rgba(251, 113, 133, 0.34);
+}
+
+.plan-health[data-status="ahead"],
+.plan-health[data-status="today_done"] {
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
 .plan-list {
   display: grid;
   gap: 16px;
@@ -106,6 +137,17 @@
   font-style: normal;
   font-weight: 700;
 }
+
+.forecast-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 2px;
+  font-size: 0.78rem;
+}
+
+.forecast-meta .ahead { color: #86efac; }
+.forecast-meta .behind { color: #fda4af; }
 
 .plan-group-stat {
   display: grid;

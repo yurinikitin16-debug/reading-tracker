@@ -29,6 +29,96 @@ export interface BookProgress extends Progress {
   coverUrl?: string | null;
 }
 
+export interface BookReadingInsights {
+  bookId: number;
+  bookTitle: string;
+  seriesId: number;
+  seriesName: string;
+  status: 'not_started' | 'in_progress' | 'completed';
+  totalChapters: number;
+  completedChapters: number;
+  remainingChapters: number;
+  progressPercentage: number;
+  completion: {
+    actualStartDate: string | null;
+    actualEndDate: string | null;
+    readingDays: number;
+    seriesAverageReadingDays: number | null;
+  };
+  pace: {
+    paceWindow: 'last_30_days' | 'all_time' | null;
+    averageChaptersPerReadingDay: number;
+    readingDaysPerWeek: number;
+    effectiveChaptersPerCalendarDay: number;
+    plannedFinishDate: string | null;
+    expectedFinishDate: string | null;
+    scheduleDifferenceDays: number | null;
+    scheduleStatus: 'ahead' | 'on_time' | 'behind' | null;
+  };
+}
+
+export interface CompletedBookHistoryItem {
+  bookId: number;
+  bookTitle: string;
+  bookOrder: number;
+  coverUrl: string | null;
+  seriesId: number;
+  seriesName: string;
+  totalChapters: number;
+  actualStartDate: string;
+  actualEndDate: string;
+  readingDays: number;
+  calendarDays: number;
+  averageChaptersPerReadingDay: number;
+  plannedFinishDate: string | null;
+  scheduleDifferenceDays: number | null;
+  scheduleStatus: 'ahead' | 'on_time' | 'behind' | null;
+}
+
+export interface PlanHealth {
+  status: 'today_done' | 'today_planned' | 'behind' | 'ahead' | 'on_track' | 'empty';
+  plannedTodayChapters: number;
+  completedPlannedTodayChapters: number;
+  completedTodayChapters: number;
+  missedChapters: number;
+  oldestMissedDate: string | null;
+  scheduleDifferenceDays: number | null;
+}
+
+export interface BookForecast {
+  bookId: number;
+  bookTitle: string;
+  bookOrder: number;
+  coverUrl: string | null;
+  seriesId: number;
+  seriesName: string;
+  status: 'not_started' | 'in_progress' | 'completed';
+  totalChapters: number;
+  completedChapters: number;
+  remainingChapters: number;
+  actualStartDate: string | null;
+  actualEndDate: string | null;
+  plannedStartDate: string | null;
+  plannedFinishDate: string | null;
+  expectedStartDate: string | null;
+  expectedFinishDate: string | null;
+  expectedCalendarDays: number | null;
+  scheduleDifferenceDays: number | null;
+  scheduleStatus: 'ahead' | 'on_time' | 'behind' | null;
+  pace: {
+    source: 'book_history' | 'series_history' | 'global_history' | 'planned';
+    averageChaptersPerReadingDay: number;
+    readingDaysPerWeek: number;
+    effectiveChaptersPerCalendarDay: number;
+  };
+}
+
+export interface ReadingPlanForecastResponse {
+  generatedAt: string;
+  planHealth: PlanHealth;
+  books: BookForecast[];
+}
+
 export interface Chapter {
   id: number;
   bookId: number;

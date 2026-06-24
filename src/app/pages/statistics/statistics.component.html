@@ -243,6 +243,51 @@
           }
         </section>
       }
+
+      @case ('books') {
+        <section class="card history-card">
+          <div class="card-title">
+            <h2>Completed Books</h2>
+            <span>Newest first</span>
+          </div>
+
+          @if (isLoadingHistory()) {
+            <div class="history-state">Loading completed books...</div>
+          } @else {
+            <div class="history-list">
+              @for (book of completionHistory(); track book.bookId) {
+                <article class="history-row">
+                  <div class="history-cover">
+                    @if (book.coverUrl) {
+                      <img [src]="book.coverUrl" [alt]="book.bookTitle + ' cover'" />
+                    } @else {
+                      <span></span>
+                    }
+                  </div>
+                  <div class="history-title">
+                    <strong>{{ book.bookTitle }}</strong>
+                    <span>{{ book.seriesName }} · Book {{ book.bookOrder }}</span>
+                    <small>{{ book.actualStartDate | date:'MMM d, y' }} - {{ book.actualEndDate | date:'MMM d, y' }}</small>
+                  </div>
+                  <div class="history-stat">
+                    <strong>{{ book.readingDays }}</strong>
+                    <span>reading days</span>
+                  </div>
+                  <div class="history-stat">
+                    <strong>{{ book.averageChaptersPerReadingDay }}</strong>
+                    <span>chapters / day</span>
+                  </div>
+                  <div class="history-status" [class.ahead]="book.scheduleStatus === 'ahead'" [class.behind]="book.scheduleStatus === 'behind'">
+                    {{ getHistoryScheduleLabel(book) }}
+                  </div>
+                </article>
+              } @empty {
+                <div class="history-state">No completed books yet.</div>
+              }
+            </div>
+          }
+        </section>
+      }
     }
 
     <section class="card average-card">

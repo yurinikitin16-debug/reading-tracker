@@ -106,6 +106,64 @@
           <span [style.width.%]="book.progressPercentage"></span>
         </div>
 
+        @if (isLoadingInsights()) {
+          <div class="insights-loading">Loading reading insights...</div>
+        } @else {
+          @if (readingInsights(); as insights) {
+            <section class="reading-insights" [class.completed]="insights.status === 'completed'">
+            <div class="insights-title">
+              <div>
+                <p class="eyebrow">Reading Insights</p>
+                <h3>{{ insights.status === 'completed' ? 'Book completed' : (insights.status === 'in_progress' ? 'Reading pace' : 'Not started') }}</h3>
+              </div>
+              <strong>{{ insights.progressPercentage }}%</strong>
+            </div>
+
+            <div class="insights-grid">
+              <div>
+                <span>Started</span>
+                <strong>{{ insights.completion.actualStartDate ? (insights.completion.actualStartDate | date:'MMM d, y') : '-' }}</strong>
+              </div>
+              <div>
+                <span>{{ insights.status === 'completed' ? 'Completed' : 'Expected finish' }}</span>
+                <strong>
+                  @if (insights.status === 'completed') {
+                    {{ insights.completion.actualEndDate | date:'MMM d, y' }}
+                  } @else {
+                    {{ insights.pace.expectedFinishDate ? (insights.pace.expectedFinishDate | date:'MMM d, y') : '-' }}
+                  }
+                </strong>
+              </div>
+              <div>
+                <span>Reading days</span>
+                <strong>{{ insights.completion.readingDays }}</strong>
+              </div>
+              <div>
+                <span>Series average</span>
+                <strong>{{ insights.completion.seriesAverageReadingDays ?? '-' }}</strong>
+              </div>
+              <div>
+                <span>Chapters / reading day</span>
+                <strong>{{ insights.pace.averageChaptersPerReadingDay }}</strong>
+              </div>
+              <div>
+                <span>Plan</span>
+                <strong [class.ahead]="insights.pace.scheduleStatus === 'ahead'" [class.behind]="insights.pace.scheduleStatus === 'behind'">
+                  {{ getScheduleDifferenceLabel(insights) }}
+                </strong>
+              </div>
+            </div>
+
+            @if (insights.pace.plannedFinishDate) {
+              <div class="forecast-line">
+                <span>Planned finish {{ insights.pace.plannedFinishDate | date:'MMM d, y' }}</span>
+                <span>{{ getPaceWindowLabel(insights) }} pace</span>
+              </div>
+            }
+            </section>
+          }
+        }
+
         <div class="chapter-list">
           @if (isLoadingChapters()) {
             <p class="muted">Loading chapters...</p>

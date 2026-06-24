@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { map } from 'rxjs';
 
 import { API_BASE_URL } from './api.config';
-import { CalendarDay, ReadingPlanItem } from '../models/library.models';
+import { CalendarDay, ReadingPlanForecastResponse, ReadingPlanItem } from '../models/library.models';
 
 export interface AddBookToPlanInput {
   bookId: number;
@@ -25,6 +25,10 @@ export class ReadingProgressService {
 
   getNextPlanDate() {
     return this.http.get<NextPlanDate>(`${this.apiBaseUrl}/reading-progress/plan/next-date`);
+  }
+
+  getPlanForecast() {
+    return this.http.get<ReadingPlanForecastResponse>(`${this.apiBaseUrl}/reading-progress/plan/forecast`);
   }
 
   addBookToPlan(data: AddBookToPlanInput) {
